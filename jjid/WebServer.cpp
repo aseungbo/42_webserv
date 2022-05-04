@@ -20,16 +20,15 @@ WebServer::WebServer(std::string confPath) : confPath(confPath)
 void WebServer::parseConfig()
 {
 	// hyopark 유언
-	std::ifstream fin(this->confPath);
-	std::string str;
-	
-	if (fin.is_open())
-		fin >> str;
-	else
+    std::string config;
+    
+    config = openConfigfile(this->confPath);
+    if(config.empty() == 1)
 		printErr("Can not open file.");
-	fin.close();
-	
+    makeServers(this->servers, config);
+    exit(0);
 
+    // func makeServer
 	Server server;
 	Server server2;
 	
@@ -313,16 +312,11 @@ void WebServer::monitorKqueue()
 // }
 //->안의 기능은 따로 뺄예정
 
-
 int main (int ac, char **av)
 {
 	std::string confPath;
-	// ac 예외처리 함수로 분기
-	if (ac == 2)
-		confPath = av[1];
-	else if (ac == 1)
-		confPath = DEFAULT_PATH;
-	else
+
+    if ((checkArg(ac, av, confPath) == -1))
 		printErr("Too many argu");
 	WebServer myFirstWebServer(confPath);
 	myFirstWebServer.parseConfig();
