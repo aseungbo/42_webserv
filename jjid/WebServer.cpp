@@ -41,7 +41,7 @@ void WebServer::parseConfig()
 	
 	int port;
 	// port.push_back(80);
-	this->servers[0].setPorts(8086);
+	this->servers[0].setPorts(8080);
 	
 	// this->servers[0].setLocation(Location(""));
 	this->servers[0].setClientBodySize(1000);
@@ -58,7 +58,7 @@ void WebServer::parseConfig()
 	host2.push_back("127.0.0.1");
 	this->servers[1].setHost(host2);
 	
-	this->servers[1].setPorts(8087);
+	this->servers[1].setPorts(8081);
 	this->servers[1].setClientBodySize(1000);
 }
 // this->servers.push_back()
@@ -165,6 +165,7 @@ void WebServer::monitorKqueue()
 	int new_events;
     struct kevent* curr_event;
     
+	int requestCnt = 0;
     while (1)
     {
         /*  apply changes and return new events(pending events) */
@@ -192,6 +193,11 @@ void WebServer::monitorKqueue()
             }
             else if (curr_event->filter == EVFILT_READ)
             {
+				
+				requestCnt++;
+				std::cout << "==========================" << std::endl;
+				std::cout << "requestCnt: " << requestCnt << std::endl;
+				std::cout << "==========================" << std::endl;
                 // if (curr_event->ident == serverSocket)
                 // map indexing으로 접근 가능한지 확인해볼 것
                 std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
@@ -240,25 +246,9 @@ void WebServer::monitorKqueue()
                 {
                     int n;
                     // std::string ResponseMessage = serverMap[curr_event->ident].getResponseClass().writeResponseMessage();
-                    std::string ResponseMessage = "HTTP/1.1 200 OK\r\n\r\nHost: localhost\r\nContent-Length: 2\r\nContent-Type: text/html\r\n\r\nhi";
-                    
-													// "Date: Mon, 27 Jul 2009 12:28:53 GM\n"
-													// "Server: Apache/2.2.14 (Win32)\n"
-													// // // "Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n"
-													// "Content-Length: 2\n"
-													// "Content-Type: text/html\n"
-													// "Connection: Closed\n"
-													// "\n"
-													// "hi\n";
-					// std::cout << ResponseMessage << std::endl;
-													
-													// "<html>\n"
-													// "<body>\n"
-													// "<h1>Hello, World!</h1>\n"
-													// "</body>\n"
-													// "</html>\n";
-                    
-                    if ((n = write(curr_event->ident, &ResponseMessage, ResponseMessage.size())) == -1)
+                    std::string ResponseMessage = "HTTP/1.1 200 GOOD\r\nDate: a\r\nServer: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nContent-Length: 6\r\nConnection: close\r\nContent-Type: text/html\r\n\n<h1>My page</h1>";
+					                    
+                    if ((n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size())) == -1)
                     {
                         printErr("client write err");
                         disconnect_client(curr_event->ident, clients);
