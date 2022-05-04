@@ -5,6 +5,11 @@
 # include "Request.hpp"
 # include "Response.hpp"
 
+#define NOT 0
+#define DIR 1
+#define FILE 2
+// #define LINK 3
+
 // class Location;
 
 class Server 
