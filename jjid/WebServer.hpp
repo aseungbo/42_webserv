@@ -3,6 +3,7 @@
 
 # include "uniHeader.hpp"
 # include "Server.hpp"
+# include "parseConf.hpp"
 
 #define DEFAULT_PATH "./default.conf"
 
