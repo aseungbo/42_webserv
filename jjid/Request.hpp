@@ -3,6 +3,7 @@
 
 # include "uniHeader.hpp"
 # include "RequestHeader.hpp"
+# include <sstream> // istringstream
 	
 typedef struct s_StartLine
 {
@@ -21,10 +22,22 @@ class Request
 		
 	public:
 		void parseRequestMessage(std::string requestMessage);
+		void initStartLine(const std::string &str);
+		int methodToNum(const std::string& str);
+
+		std::vector<std::string> splitRequestMessage(std::string str, char delimiter);
 
 		t_StartLine getStartLine();
 		RequestHeader& getRequestHeader();
 		std::string getBody();
+
+		class StartLineErr : public std::exception
+		{
+			const char *what() const throw ()
+			{
+				return ("StartLine Err\n");
+			}
+		};
 };
 
 #endif
