@@ -26,7 +26,15 @@ std::string openConfigfile(std::string confPath)
         fin.read(&contents[0], size);
     }
 	else
-        return ("");
+    {
+        contents.clear();
+        return (contents);
+    }
 	fin.close();
     return (contents);
+}
+
+void makeServers(std::vector<Server>& servers, std::string config)
+{
+    ;
 }
