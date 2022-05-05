@@ -34,28 +34,42 @@ std::string openConfigfile(std::string confPath)
     return (contents);
 }
 
+std::vector<std::string> parseServerBlock(std::string config)
+{
+    std::vector<std::string> blockVec;
+    std::string temp;
+    int idx = config.find("server {");
+    int idxNext;
+
+    if (idx == std::string::npos)
+    {
+        blockVec.clear();
+        printErr("Not exist server block.");
+        return (blockVec);
+    }
+    else
+    {
+        while (idx != std::string::npos)
+        {   
+            idxNext = config.find("server {", idx + 1);
+            temp = config.substr(idx, idxNext - idx);
+            idx = idxNext;
+            blockVec.push_back(temp);
+            temp.clear();
+        }
+    }
+    return (blockVec);
+}
+
 std::vector<Server> makeServers(std::string config)
 {
     std::vector<Server> servers;
-    std::cout << "servers size: " << servers.size()  << std::endl;
-
-    // find
-    // size_t nPos = config.find("fastcgi_pass");
-    // if( nPos != std::string::npos )
-    // { 
-    //     // 찾고자 하는 문자열부터 이후까지 출력
-    //     std::string subtext = config.substr(nPos);
-    //     std::cout << subtext << std::endl;
-    // }
-    
-    // check server block
-    int idx = 0;
-    int cnt = 0;
-    while (config.find("server {", idx) != std::string::npos)
-    {   
-        idx = config.find("server {", idx + 1);
-        cnt++;
+    std::vector<std::string> serverBlocks = parseServerBlock(config);
+    std::vector<std::string>::iterator serverBlock = serverBlocks.begin();
+    while (serverBlock != serverBlocks.end())
+    {
+        std::cout << *serverBlock << std::endl;
+        serverBlock++;
     }
-    std::cout << "cnt: " << cnt << std::endl;
     return (servers);
 }
