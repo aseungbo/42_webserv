@@ -25,7 +25,9 @@ void WebServer::parseConfig()
     config = openConfigfile(this->confPath);
     if(config.empty() == 1)
 		printErr("Can not open file.");
-    makeServers(this->servers, config);
+    this->servers = makeServers(config);
+    if (this->servers.size() == 0)
+        printErr("Can not make servers.");
     exit(0);
 
     // func makeServer

@@ -34,7 +34,28 @@ std::string openConfigfile(std::string confPath)
     return (contents);
 }
 
-void makeServers(std::vector<Server>& servers, std::string config)
+std::vector<Server> makeServers(std::string config)
 {
-    ;
+    std::vector<Server> servers;
+    std::cout << "servers size: " << servers.size()  << std::endl;
+
+    // find
+    // size_t nPos = config.find("fastcgi_pass");
+    // if( nPos != std::string::npos )
+    // { 
+    //     // 찾고자 하는 문자열부터 이후까지 출력
+    //     std::string subtext = config.substr(nPos);
+    //     std::cout << subtext << std::endl;
+    // }
+    
+    // check server block
+    int idx = 0;
+    int cnt = 0;
+    while (config.find("server {", idx) != std::string::npos)
+    {   
+        idx = config.find("server {", idx + 1);
+        cnt++;
+    }
+    std::cout << "cnt: " << cnt << std::endl;
+    return (servers);
 }
