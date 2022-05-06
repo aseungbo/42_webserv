@@ -1,7 +1,4 @@
 #include "Server.hpp"
-#include <sys/stat.h>
-class Location;
-
 
 void Server::setHost(std::vector<std::string> hosts)
 {

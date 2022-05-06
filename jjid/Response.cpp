@@ -15,3 +15,18 @@ std::string Response::searchStatusCodeMessage(int statusCode)
 	returnStatusCodeMessage = " OK\n\n";
 	return (returnStatusCodeMessage);
 }
+
+void Response::setStatusCode(int statusCode)
+{
+	this->statusCode = statusCode;
+}
+
+void Response::setHeader(ResponseHeader header)
+{
+	this->header = header;
+}
+
+void Response::setBody(std::string body)
+{
+	this->body = body;
+}

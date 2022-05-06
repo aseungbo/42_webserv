@@ -5,6 +5,10 @@
 # include "Request.hpp"
 # include "Response.hpp"
 
+#include <sys/stat.h>
+#include "Location.hpp"
+
+
 #define NOT 0
 #define DIR 1
 #define FILE 2
@@ -12,28 +16,6 @@
 #define DEFAULT_INDEX "index.html"
 // #define LINK 3
 
-class Location : public Server
-	{
-		private:
-			std::string root;
-			// std::string index;
-			std::vector<std::string> index;
-			// bool autoIndex;
-			// std::map<std::vector<int>, std::string> errPage;
-			std::vector<std::string> methodsAllowed;
-			
-			std::string path;
-			
-		public:
-			std::string getRoot();
-			std::vector<std::string> getIndex();
-			// bool getAutoIndex();
-			// std::map<std::vector<int>, std::string> getErrPage();
-			std::vector<std::string> getMethodsAllowed();
-			
-			std::string getPath();
-			
-	};
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
