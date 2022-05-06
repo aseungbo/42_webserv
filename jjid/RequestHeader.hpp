@@ -9,7 +9,7 @@ class RequestHeader : public Header
 	private:
 		std::string host;
 
-		커넥션
+		// 커넥션
 		//
 		// host 서ㅓㅂ의 도메인 네임
 		// User-Agent 어떤 클라이언트를 통해 요청
