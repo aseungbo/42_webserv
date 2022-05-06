@@ -8,10 +8,32 @@
 #define NOT 0
 #define DIR 1
 #define FILE 2
+
+#define DEFAULT_INDEX "index.html"
 // #define LINK 3
 
-// class Location;
-
+class Location : public Server
+	{
+		private:
+			std::string root;
+			// std::string index;
+			std::vector<std::string> index;
+			// bool autoIndex;
+			// std::map<std::vector<int>, std::string> errPage;
+			std::vector<std::string> methodsAllowed;
+			
+			std::string path;
+			
+		public:
+			std::string getRoot();
+			std::vector<std::string> getIndex();
+			// bool getAutoIndex();
+			// std::map<std::vector<int>, std::string> getErrPage();
+			std::vector<std::string> getMethodsAllowed();
+			
+			std::string getPath();
+			
+	};
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
@@ -19,7 +41,7 @@ class Server
 			std::vector<std::string> hosts;//Host 클래스로 만들어서 호스트정보는 저장하고 메서드로 아이피 주소 퉤 하는 거 만들고싶다 
 			// std::vector<int> ports;//파싱할때 알아서 서버별로 포트 구분하세요~
 			int port;
-			// std::vector<Location> locations;
+			std::vector<Location> locations;
 			int clientBodySize;//이거 리퀘스트냐?? 리스폰스냐? 나중에 찌가 알아오기
 			std::vector<std::string> allowMethod;
 			//서버 상태 필요할듯 청크에서 등
@@ -59,6 +81,13 @@ class Server
 			void postMethod();
 			void deleteMethod();
 			void headMethod();
+			
+			
+			Location whereIsLocation(std::string path, std::vector<Location> locations);
+			Location getDefaultLocation();
+			
+			void serchIndex(std::string &path, Location currLocation);
+			void openFile(std::string path);
 			
 	};
 
