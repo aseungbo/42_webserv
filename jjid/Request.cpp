@@ -1,10 +1,5 @@
 #include "Request.hpp"
 
-void RequestHeader::setHost(std::string host)
-{
-	this->host = host;
-}
-
 std::vector<std::string> Request::splitRequestMessage(std::string str, char delimiter)
 {
     std::istringstream iss(str);              // istringstream에 str을 담는다.
@@ -13,6 +8,10 @@ std::vector<std::string> Request::splitRequestMessage(std::string str, char deli
     // istringstream은 istream을 상속받으므로 getline을 사용할 수 있다.
     while (std::getline(iss, buffer, delimiter))
         result.push_back(buffer);               // 절삭된 문자열을 vector에 저장
+	// result.push_back("\n");
+	// std::cout <<  result[result.size()-1] << std::endl;
+	// printf("d : %d \n", result[result.size()-1][0] );
+	// printf("size : %d \n", (int)result[result.size()-1].size() );
     return result;
 }
 
@@ -34,11 +33,6 @@ void Request::initStartLine(const std::string &str)
 {
 	std::vector<std::string> parseStartLine = splitRequestMessage(str , ' ');
 
-
-	// for (std::vector<std::string>::iterator iter = parseStartLine.begin(); iter != parseStartLine.end(); iter++)
-	// 	std::cout << "[ ] : " << *iter << std::endl;
-	// std::cout << parseStartLine.size() << std::endl;
-	
 	try
 	{
 		if (parseStartLine.size() != 3)
@@ -52,40 +46,46 @@ void Request::initStartLine(const std::string &str)
 	{
 		std::cerr << e.what() << '\n';
 	}
-	
 }
+
+std::pair <std::string, std::string> Request::initRequestHeader(const std::string header)
+{
+
+	// std::cout << header << std::endl;
+	std::vector<std::string> splitHeader = splitRequestMessage(header, ':');
+	
+	if (splitHeader.size() > 2)
+	{
+		for (int i = 2; i < splitHeader.size(); i++)
+			splitHeader[1] += (":" + splitHeader[i]);
+	}
+	std::pair<std::string, std::string> temp;
+	temp.first = splitHeader[0];
+	temp.second = splitHeader[1];
+
+	// std::cout << "initRequestHeader : " << "[" << temp.first << " , "<< temp.second << "]" << std::endl;
+
+	return (temp);
+}
+
 
 void Request::parseRequestMessage(std::string requestMessage)
 {
+	// std::cout << requestMessage << std::endl;
+
 	std::vector<std::string> parseRequest = splitRequestMessage(requestMessage, '\n');
-	// msg parsing
+	
 	//맨마지막은 '\n'
 	int i = 0;
-	initStartLine(parseRequest[i++]);
+	initStartLine(parseRequest[i++]);	
+	for (std::vector<std::string>::iterator iter = parseRequest.begin() + 1; *iter != "\r"; iter++)
+		header.getContent().insert(initRequestHeader(*iter));
 
-	std::cout << startline.method << " " << startline.path << " " << startline.http << std::endl;
-	std::cout << std::endl;
-
-	
-	//test//
-	// for (std::vector<std::string>::iterator iter = parseRequest.begin(); iter != parseRequest.end(); iter++)
-	// 	std::cout << "[ ] : " << *iter << std::endl;
-
-
-
-	// startline
-
-	// header
-	header.setHost("127.0.0.1");
-	
-	// body
-	body = "Something JJid";
+	for (std::map <std::string, std::string>::iterator iter = header.getContent().begin(); iter != header.getContent().end(); iter++)
+		std::cout << (*iter).first << " " << (*iter).second << std::endl;
 	
 	// cgi
-	cgi = false;
-	
-	// Receive Test
-	std::cout << requestMessage << std::endl;
+	// cgi = false;
 }
 
 t_StartLine Request::getStartLine()
@@ -93,7 +93,7 @@ t_StartLine Request::getStartLine()
 	return (startline);
 }
 
-RequestHeader& Request::getRequestHeader()
+Header& Request::getHeader()
 {
 	return (header);
 }
