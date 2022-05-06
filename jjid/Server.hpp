@@ -9,6 +9,7 @@
 #include "Location.hpp"
 
 
+
 #define NOT 0
 #define DIR 1
 #define FILE 2
