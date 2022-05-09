@@ -125,10 +125,20 @@ void    parseOneline(std::string contSplit, std::map<std::string, std::vector<st
     transferOneSpace(contSplit);
     contSplit = transferOneSpace(contSplit);
     std::vector<std::string> lineSplit = charSplit(contSplit, ' ');
-    std::string Key = lineSplit[0];
+    std::string key = lineSplit[0];
     lineSplit.erase(lineSplit.begin());
-    map->insert(std::pair<std::string, std::vector<std::string> >(Key, lineSplit));
+    if (map->find(key) == map->end())
+        map->insert(std::pair<std::string, std::vector<std::string> >(key, lineSplit));
+    else
+    {
+        std::cout << "exist key" << std::endl;
+    }
 }
+
+// Location    parseLocationBlock()
+// {
+//     ;
+// }
 
 void    initServer(std::vector<Server>& servers, std::string content)
 {
@@ -144,24 +154,23 @@ void    initServer(std::vector<Server>& servers, std::string content)
         {   
             while (*(contSplit[++i].end() - 1) == ';')
             {
+
                 // trimString(contSplit[i], charsToTrim);
                 // std::cout << "location line: " << contSplit[i] << std::endl;
             }
         }
-        // normal line
         else if (*(contSplit[i].end() - 1) == ';')
             parseOneline(contSplit[i], &keyValueMap);
     }
     
     // init server
-    int portNum = keyValueMap.find("listen")->second.size();
-    for (int i = 0; i < portNum; i++)
+    for (int i = 0; i < keyValueMap.find("listen")->second.size(); i++)
     {
         Server serv;
 
         serv.setHost(keyValueMap.find("server_name")->second);
-        serv.setPort(stoi(keyValueMap.find("listen")->second[i]));
-        serv.setClientBodySize(1000);
+        serv.setPort(atoi((keyValueMap.find("listen")->second[i]).c_str()));
+        serv.setClientBodySize(atoi((keyValueMap.find("client_max_body_size")->second[0].c_str())));
         servers.push_back(serv);
     }
 }
