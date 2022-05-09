@@ -28,47 +28,13 @@ void WebServer::parseConfig()
     this->servers = makeServers(config);
     if (this->servers.size() == 0)
         printErr("Can not make servers.");
-    // exit(0);
-
-    // func makeServer
-	Server server;
-	Server server2;
-	
-	this->servers.push_back(server);
-	// parse 후 server에 할당
-	std::vector<std::string> host;
-	host.push_back("127.0.0.1");
-	this->servers[0].setHost(host);
-	
-	int port;
-	// port.push_back(80);
-	this->servers[0].setPorts(8086);
-
-	// this->servers[0].setLocation(Location(""));
-	this->servers[0].setClientBodySize(1000);
-	// this->servers[0].setErrPage();
-	// std::vector<Server> servers;
-	// std::vector < int > serverFd; //자료형 고려
-	// std::string confPath;
-	
-	
-	// only for test
-	// this->servers.push_back(server2);
-	// std::vector<std::string> host2;
-	
-	// host2.push_back("127.0.0.1");
-	// this->servers[1].setHost(host2);
-	
-	// this->servers[1].setPorts(8082);
-	// this->servers[1].setClientBodySize(1000);
 }
-// this->servers.push_back()
 
 // kqueue 생성 
-void WebServer::makeKqueue()
-{
+// void WebServer::makeKqueue()
+// {
 	
-}
+// }
 
 void WebServer::listenServers()
 {
@@ -82,6 +48,7 @@ void WebServer::listenServers()
 		memset(&serverAddr, 0, sizeof(serverAddr));
 		serverAddr.sin_family = AF_INET;
 		serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+        std::cout << "serv port: " << this->servers[idx].getPort() << std::endl;
 		serverAddr.sin_port = htons(this->servers[idx].getPort());
 		if (bind(serverSocketFD, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1)
 			printErr("bind error");

@@ -49,7 +49,7 @@ class Server
 			
 			// set
 			void setHost(std::vector<std::string> hosts);
-			void setPorts(int port);
+			void setPort(int port);
 			void setClientBodySize(int clientBodySize);
 			// void setErrPage(std::map<std::vector<int>, std::string> errPage);
 			// void setLocation(std::vector<Location> locations);
