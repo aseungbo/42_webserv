@@ -15,6 +15,7 @@ typedef struct s_StartLine
 class Request
 {
 	private:
+		std::string extension;
 		t_StartLine startline;
 		Header header;                                
 		std::string body;

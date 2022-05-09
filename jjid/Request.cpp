@@ -41,6 +41,13 @@ void Request::initStartLine(const std::string &str)
 		startline.method = methodToNum(parseStartLine[0]);
 		startline.path = parseStartLine[1];
 		startline.http = parseStartLine[2];
+
+		std::vector<std::string> parsePath = splitRequestMessage(parseStartLine[1] , '.');
+		
+		if (parsePath.size() == 1)
+			extension = "";  //나중에 뭐 넣을 지 다시 고민
+		else
+			extension = parsePath[1];
 	}
 	catch(const std::exception& e)
 	{
@@ -81,9 +88,17 @@ void Request::parseRequestMessage(std::string requestMessage)
 	for (std::vector<std::string>::iterator iter = parseRequest.begin() + 1; *iter != "\r"; iter++)
 		header.getContent().insert(initRequestHeader(*iter));
 
+	std::cout << "<<<<<<<<<<<<<<<" << std::endl;
+	std::cout << "===============" << std::endl;
+	std::cout << "extension : " << "[" << extension << "]" << std::endl;
+	std::cout << "===============" << std::endl;
+	std::cout << ">>>>>>>>>>>>>>>" << std::endl;
+	
+
 	for (std::map <std::string, std::string>::iterator iter = header.getContent().begin(); iter != header.getContent().end(); iter++)
 		std::cout << (*iter).first << " " << (*iter).second << std::endl;
 	
+
 	// cgi
 	// cgi = false;
 }
