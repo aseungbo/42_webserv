@@ -45,14 +45,14 @@ std::string transferOneSpace(std::string str)
 }
 
 // split
-std::vector<std::string> charSplit(std::string input, char delimiter) {
+std::vector<std::string> charSplit(std::string input, char delimiter)
+{
     std::vector<std::string> answer;
     std::stringstream ss(input);
     std::string temp;
  
-    while (getline(ss, temp, delimiter)) {
+    while (getline(ss, temp, delimiter))
         answer.push_back(temp);
-    }
     return answer;
 }
 
@@ -111,13 +111,12 @@ std::vector<std::string> parseServerBlock(std::string config)
             temp = config.substr(idx, idxNext - idx);
             idx = idxNext;
             blockVec.push_back(temp);
-            temp.clear();
         }
     }
     return (blockVec);
 }
 
-void    parseOneline(std::string contSplit, std::map<std::string, std::vector<std::string> > *map)
+void    parseOneLine(std::string contSplit, std::map<std::string, std::vector<std::string> >& map)
 {
     std::string charsToTrim = " ;";
 
@@ -127,42 +126,41 @@ void    parseOneline(std::string contSplit, std::map<std::string, std::vector<st
     std::vector<std::string> lineSplit = charSplit(contSplit, ' ');
     std::string key = lineSplit[0];
     lineSplit.erase(lineSplit.begin());
-    if (map->find(key) == map->end())
-        map->insert(std::pair<std::string, std::vector<std::string> >(key, lineSplit));
+
+    if (map.find(key) != map.end())
+    {
+        map.find(key)->second.insert(map.find(key)->second.end(), lineSplit.begin(), lineSplit.end());
+    }
     else
     {
-        std::cout << "exist key" << std::endl;
+        map.insert(std::pair<std::string, std::vector<std::string> >(key, lineSplit));
     }
+    lineSplit.clear();
 }
-
-// Location    parseLocationBlock()
-// {
-//     ;
-// }
 
 void    initServer(std::vector<Server>& servers, std::string content)
 {
     // parse server block line
     std::vector<std::string> contSplit = charSplit(content, '\n');
     std::map<std::string, std::vector<std::string> > keyValueMap;
-
     for (int i = 0; i < contSplit.size(); i++)
     {   
-
         // location block line
         if (contSplit[i].find("location") != std::string::npos)
         {   
             while (*(contSplit[++i].end() - 1) == ';')
             {
-
-                // trimString(contSplit[i], charsToTrim);
-                // std::cout << "location line: " << contSplit[i] << std::endl;
+                // std::cout << "location: " << contSplit[i] << std::endl;
+                ;
             }
+            i++;
         }
         else if (*(contSplit[i].end() - 1) == ';')
-            parseOneline(contSplit[i], &keyValueMap);
+        {
+            parseOneLine(contSplit[i], keyValueMap);
+        }
     }
-    
+
     // init server
     for (int i = 0; i < keyValueMap.find("listen")->second.size(); i++)
     {
@@ -173,6 +171,7 @@ void    initServer(std::vector<Server>& servers, std::string content)
         serv.setClientBodySize(atoi((keyValueMap.find("client_max_body_size")->second[0].c_str())));
         servers.push_back(serv);
     }
+    keyValueMap.clear();
 }
 
 std::vector<Server> makeServers(std::string config)
