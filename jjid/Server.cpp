@@ -45,16 +45,16 @@ Response& Server::getResponseClass()
 
 void Server::processMethod()
 {
-	//allow method확인할것
+	//allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
 	//isAllowMethod();
 	//405ls
 	switch (currRequest.getStartLine().method)
 	{
 		case GET:
-			getMethod();
+			getMethod(NO_HEAD);
 			break;
 		case HEAD:
-			headMethod();
+			getMethod(YES_HEAD);
 			break;
 		case POST:
 			postMethod();
@@ -91,10 +91,10 @@ Location Server::getDefaultLocation()
 	return defaultLocation;
 }
 
-Location Server::whereIsLocation(std::string path, std::vector<Location> locations)
+Location Server::whereIsLocation(std::string path, int pathType, std::vector<Location> locations)
 {
 //테스트 해보니까 로케이션이 없는경우 기본값 로케이션으로 하나봄 -> 메서드로 기본값로케이션 반환하는 거 하나 만들어서 (로케이션 사이즈가 0이거나 일치하는 로케이션이 없을때)에 예외처리 ㄱ
-	if (locations.size() == 0)
+	if (locations.size() == 0 )//|| pathType == )
 		return (getDefaultLocation());
 	//형식 맞춰줌 인덱싱으로 연산 빠를 거라고 예상...	
 	if (path[path.length() - 1] != '/')
@@ -134,13 +134,15 @@ void Server::serchIndex(std::string &path, Location currLocation)
 	}
 }
 
-void Server::openFile(std::string path)
+void Server::openFile(std::string path, int isHead)
 {
-	
+	std::cout << "\nopen call \n";
 	// 파일 읽기 준비
 	std::ifstream in(path);
 	std::string body;
 	if (in.is_open()) {
+		if (isHead == NO_HEAD)
+		{
 		// 위치 지정자를 파일 끝으로 옮긴다.
 		in.seekg(0, std::ios::end);
 		// 그리고 그 위치를 읽는다. (파일의 크기)
@@ -151,23 +153,32 @@ void Server::openFile(std::string path)
 		in.seekg(0, std::ios::beg);
 		// 파일 전체 내용을 읽어서 문자열에 저장한다.
 		in.read(&body[0], size);
-		std::cout << body << std::endl;
+		
+		// std::cout << body << std::endl;
+		}
 	}
 	else {
 		std::cout << "파일을 찾을 수 없습니다!" << std::endl;
+		in.close();
 		// throw (404);//catch해서 set다 호출할것 TODO
 		return;
 	}
-	this->currResponse.setBody(body);
 	this->currResponse.setStatusCode(200);
+	this->currResponse.setBody(body);
 	
+	std::cout << "whereis test::::\n";
+	std::cout << "test:::: " << currResponse.writeResponseMessage()<<std::endl;
+	in.close();
 	return ;
 }
 
-void Server::getMethod()
+void Server::getMethod(int isHead)
 {
 	std::string path = this->currRequest.getStartLine().path;
-	Location currLocation = whereIsLocation(path, locations);//find or  map match 등 다른이름 추천받음
+	path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것
+	int pathType = checkPath(path);
+	std::cout << path <<std::endl;
+	Location currLocation = whereIsLocation(path, pathType, locations);//find or  map match 등 다른이름 추천받음
 	
 	// 파일 디렉토리 링크 등으로 뱉어낼거임
 	//디렉토리 -> 인덱스파일 탐색
@@ -176,18 +187,16 @@ void Server::getMethod()
 	
 	//설정한 인덱스가 디렉토리인 경우를 생각했을때 실제 탐색해볼 주소를 완성하기 위한 serchIndex(처리될 로케이션의 정보를 가지고 Path를 완성시킴)
 	// if (checkPath(path) == DIR)
-	switch (checkPath(path))
+	switch (pathType)
 	{
 		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
 			serchIndex(path, currLocation);
-			/* code */
 			// break;// 브레이크 안걸면 밑에거 까지 실행해주는걸로 아는디 불안하면 그냥 opneFile호출하시오
 		case FILE ://해당파일찾아볼것 마찬가지로 없다면 403
-			openFile(path);
-			/* code */
+			openFile(path, isHead);
 			break;
 		case NOT ://404
-			/* code */
+			/* throw 404 error */
 			break;
 		default:
 			break;
@@ -197,6 +206,8 @@ void Server::getMethod()
 
 void Server::postMethod()
 {
+	// 기존 파일이 있는지 확인 후 있으면 수정, 없으면 크리에이트 , 디렉토리면...?일단 에러
+	// 쿼리날리는거, 디비접근 등도 고려해야하는지 섭젝 읽어볼것
 	
 }
 
@@ -205,7 +216,7 @@ void Server::deleteMethod()
 		
 }
 
-void Server::headMethod()
-{
+// void Server::headMethod()
+// {
 		
-}
+// }
