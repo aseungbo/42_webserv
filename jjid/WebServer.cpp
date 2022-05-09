@@ -28,7 +28,7 @@ void WebServer::parseConfig()
     this->servers = makeServers(config);
     if (this->servers.size() == 0)
         printErr("Can not make servers.");
-    exit(0);
+    // exit(0);
 
     // func makeServer
 	Server server;
@@ -42,8 +42,8 @@ void WebServer::parseConfig()
 	
 	int port;
 	// port.push_back(80);
-	this->servers[0].setPorts(8080);
-	
+	this->servers[0].setPorts(8086);
+
 	// this->servers[0].setLocation(Location(""));
 	this->servers[0].setClientBodySize(1000);
 	// this->servers[0].setErrPage();
@@ -53,14 +53,14 @@ void WebServer::parseConfig()
 	
 	
 	// only for test
-	this->servers.push_back(server2);
-	std::vector<std::string> host2;
+	// this->servers.push_back(server2);
+	// std::vector<std::string> host2;
 	
-	host2.push_back("127.0.0.1");
-	this->servers[1].setHost(host2);
+	// host2.push_back("127.0.0.1");
+	// this->servers[1].setHost(host2);
 	
-	this->servers[1].setPorts(8081);
-	this->servers[1].setClientBodySize(1000);
+	// this->servers[1].setPorts(8082);
+	// this->servers[1].setClientBodySize(1000);
 }
 // this->servers.push_back()
 
@@ -170,13 +170,16 @@ void WebServer::monitorKqueue()
     while (1)
     {
         /*  apply changes and return new events(pending events) */
-        std::cout << "Hello JJIDRAGON WORLD" << std::endl;
+        // std::cout << "Hello JJIDRAGON WORLD" << std::endl;
         new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
         if (new_events == -1)
-            printErr("kevent() error\n");
+        {
+            // printErr("kevent() error\n");
+            usleep(10);
+        }
 
         change_list.clear(); // clear change_list for new changes
-		std::cout << "new_events : " << new_events<<std::endl;
+		// std::cout << "new_events : " << new_events<<std::endl;
         for (int i = 0; i < new_events; ++i)
         {
             curr_event = &event_list[i];
@@ -184,42 +187,45 @@ void WebServer::monitorKqueue()
             if (curr_event->flags & EV_ERROR)
             {
                 std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
-                if (curr_event->ident == serverIter->first)
+                if (serverIter != serverMap.end())
                     printErr("server socket error");
-                else
-                {
-                    printErr("client socket error");
+                // else
+                // {
+                    // printErr("client socket error");
                     // disconnect_client(curr_event->ident, clients);
-                }
+                // }
             }
             else if (curr_event->filter == EVFILT_READ)
             {
-				
-				requestCnt++;
-				std::cout << "==========================" << std::endl;
-				std::cout << "requestCnt: " << requestCnt << std::endl;
-				std::cout << "==========================" << std::endl;
-                // if (curr_event->ident == serverSocket)
                 // map indexing으로 접근 가능한지 확인해볼 것
                 std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
                 if (serverIter != serverMap.end())
+                // if (curr_event->ident == serverIter->first)
                 {
                     /* accept new client */
                     int clientSocket = 0;
                     int serverSocket = serverIter->first;
                     if ((clientSocket = accept(serverSocket, NULL, NULL)) == -1)
-                        printErr("accept() error\n");
+                    {
+                        usleep(10);
+                        // printErr("accept() error\n");
+                        // exit(0);
+                    }
                     // serverMap[curr_event->ident].setClientSocket(clientSocket);
-                    std::cout << "accept new client: " << clientSocket << std::endl;
+                    // std::cout << "accept new client: " << clientSocket << std::endl;
                     fcntl(clientSocket, F_SETFL, O_NONBLOCK);
 
                     /* add event for client socket - add read && write event */
                     change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     change_events(change_list, clientSocket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clients[clientSocket] = "";
+                    // std::cout << "1 " << std::endl;
+                    // serverMap[curr_event->ident].processMethod();
                 }
-                else if (clients.find(curr_event->ident)!= clients.end())
+                else if (clients.find(curr_event->ident) != clients.end())
                 {
+                    // exit(0);
+                    // std::cout << "\nelseif\n" <<std::endl;
                     /* read data from client */
                     char buf[1024];
                     int n = read(curr_event->ident, buf, sizeof(buf));
@@ -231,13 +237,15 @@ void WebServer::monitorKqueue()
                             printErr("client read error!");
                         disconnect_client(curr_event->ident, clients);
                     }
-                    else
+                    else//???????????
                     {
+                        // std::cout << "\nelse\n" <<std::endl;
                         // parse request
                         buf[n] = '\0';
                         clients[curr_event->ident] += buf;
                         serverMap[curr_event->ident].getRequestClass().parseRequestMessage(clients[curr_event->ident]);
                         serverMap[curr_event->ident].processMethod();
+                        // exit(0);
                     }
                 }
             }
@@ -245,16 +253,22 @@ void WebServer::monitorKqueue()
             {
                 if (clients.find(curr_event->ident)!= clients.end())
                 {
+                if (clients[curr_event->ident] != "")
+                    {
                     int n;
                     // std::string ResponseMessage = serverMap[curr_event->ident].getResponseClass().writeResponseMessage();
-                    std::string ResponseMessage = "HTTP/1.1 200 GOOD\r\nDate: a\r\nServer: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nContent-Length: 6\r\nConnection: close\r\nContent-Type: text/html\r\n\n<h1>My page</h1>";
+                    // std::string ResponseMessage = "HTTP/1.1 200 GOOD\r\nDate: a\r\nServer: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nContent-Length: 6\r\nConnection: close\r\nContent-Type: text/html\r\n\n<h1>My page</h1>";
+                    std::string ResponseMessage = serverMap[curr_event->ident].getResponseClass().writeResponseMessage();
 					                    
                     if ((n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size())) == -1)
                     {
                         printErr("client write err");
                         disconnect_client(curr_event->ident, clients);
                     }
-                    disconnect_client(curr_event->ident, clients);
+                    else
+                        clients[curr_event->ident].clear();
+                    // disconnect_client(curr_event->ident, clients);
+                    }
                 }
             }
         }

@@ -2,13 +2,13 @@
 # define RESPONSE_HPP
 
 #include "uniHeader.hpp"
-#include "ResponseHeader.hpp"
+#include "Header.hpp"
 
 class Response
 	{
 		private:
 			int statusCode;
-			ResponseHeader header;
+			Header header;
 			std::string body;
 	
 		public:
@@ -17,8 +17,12 @@ class Response
 			
 			//TODO 구현
 			void setStatusCode(int statusCode);
-			void setHeader(ResponseHeader header);
+			void setHeader(Header header);
 			void setBody(std::string body);
+			
+			int getStatusCode();
+			Header getHeader();
+			std::string getBody();
 	};
 
 #endif

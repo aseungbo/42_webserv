@@ -17,6 +17,9 @@
 #define DEFAULT_INDEX "index.html"
 // #define LINK 3
 
+#define YES_HEAD 1
+#define NO_HEAD 0
+
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
@@ -60,17 +63,17 @@ class Server
 			
 			void processMethod();
 			// Request Method
-			void getMethod();
+			void getMethod(int isHead);
 			void postMethod();
 			void deleteMethod();
-			void headMethod();
+			// void headMethod();
 			
 			
-			Location whereIsLocation(std::string path, std::vector<Location> locations);
+			Location Server::whereIsLocation(std::string path, int pathType, std::vector<Location> locations);
 			Location getDefaultLocation();
 			
 			void serchIndex(std::string &path, Location currLocation);
-			void openFile(std::string path);
+			void openFile(std::string path, int isHead);
 			
 	};
 
