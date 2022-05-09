@@ -145,7 +145,7 @@ void    initServer(std::vector<Server>& servers, std::string content)
             while (*(contSplit[++i].end() - 1) == ';')
             {
                 // trimString(contSplit[i], charsToTrim);
-                std::cout << "location line: " << contSplit[i] << std::endl;
+                // std::cout << "location line: " << contSplit[i] << std::endl;
             }
         }
         // normal line
