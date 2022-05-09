@@ -5,7 +5,7 @@ void Server::setHost(std::vector<std::string> hosts)
 	this->hosts = hosts;
 }
 
-void Server::setPorts(int port)
+void Server::setPort(int port)
 {
 	this->port = port;
 }
