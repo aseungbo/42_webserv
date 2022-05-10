@@ -25,11 +25,13 @@ class Server
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
 		private:
 			std::vector<std::string> hosts;//Host 클래스로 만들어서 호스트정보는 저장하고 메서드로 아이피 주소 퉤 하는 거 만들고싶다 
-			// std::vector<int> ports;//파싱할때 알아서 서버별로 포트 구분하세요~
 			int port;
-			std::vector<Location> locations;
 			int clientBodySize;//이거 리퀘스트냐?? 리스폰스냐? 나중에 찌가 알아오기
-			std::vector<std::string> allowMethod;
+			// std::vector<std::string> allowMethod;
+			std::vector<std::string> index;
+			// std::vector<std::string> errPage;
+			std::vector<Location> locations;
+			
 			//서버 상태 필요할듯 청크에서 등
 			Request currRequest;
 			Response currResponse;//구조적으로 맘에 안듦 (jji, 29, 무직)
@@ -48,9 +50,11 @@ class Server
 			void setClientSocket(int socketFd) { this->clientSocket = socketFd; }
 			
 			// set
-			void setHost(std::vector<std::string> hosts);
+			void setHosts(std::vector<std::string> hosts);
 			void setPort(int port);
 			void setClientBodySize(int clientBodySize);
+			void setAllowMethod(std::vector<std::string> allowMethod);
+			void setIndex(std::vector<std::string> index);
 			// void setErrPage(std::map<std::vector<int>, std::string> errPage);
 			// void setLocation(std::vector<Location> locations);
 			
