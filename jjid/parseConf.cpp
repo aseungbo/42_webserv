@@ -126,8 +126,10 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
         serv.setHosts(keyValueMap.find("server_name")->second);
         serv.setPort(atoi((keyValueMap.find("listen")->second[i]).c_str()));
         serv.setClientBodySize(atoi((keyValueMap.find("client_max_body_size")->second[0].c_str())));
-        // serv.setAllowMethod(keyValueMap.find(""));
-        serv.setIndex(keyValueMap.find("index")->second);
+        
+        // find하지 못한 key에 대해 second 접근 시 터짐 !
+        // serv.setAllowMethod(keyValueMap.find("")); 
+        // serv.setIndex(keyValueMap.find("index")->second);
         // serv.setErrPage(keyValueMap.find("error_page")->second);
         // serv.setLocation(locations);
         servers.push_back(serv);
