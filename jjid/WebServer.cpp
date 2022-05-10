@@ -28,6 +28,8 @@ WebServer::WebServer(std::string confPath) : confPath(confPath)
 
 void WebServer::parseConfig()
 {
+    Parser parser;
+    
     parser.openConfigfile(this->confPath);
     if (parser.getConfig().empty() == 1)
 		printErr("Can not open file.");

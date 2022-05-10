@@ -47,7 +47,7 @@ void Request::initStartLine(const std::string &str)
 		if (parsePath.size() == 1)
 			extension = "";  //나중에 뭐 넣을 지 다시 고민
 		else
-			extension = parsePath[1];
+			extension = parsePath[1]; // parsePath[parsePath.size() - 1]; >> 이렇게 마지막것 만 가져오기
 	}
 	catch(const std::exception& e)
 	{
@@ -95,6 +95,7 @@ void Request::parseRequestMessage(std::string requestMessage)
 
 	for (std::map <std::string, std::string>::iterator iter = header.getContent().begin(); iter != header.getContent().end(); iter++)
 		std::cout << (*iter).first << " " << (*iter).second << std::endl;
+	
 	
 
 	// cgi
