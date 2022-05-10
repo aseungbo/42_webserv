@@ -89,9 +89,7 @@ void Request::parseRequestMessage(std::string requestMessage)
 		header.getContent().insert(initRequestHeader(*iter));
 
 	std::cout << "<<<<<<<<<<<<<<<" << std::endl;
-	std::cout << "===============" << std::endl;
 	std::cout << "extension : " << "[" << extension << "]" << std::endl;
-	std::cout << "===============" << std::endl;
 	std::cout << ">>>>>>>>>>>>>>>" << std::endl;
 	
 
