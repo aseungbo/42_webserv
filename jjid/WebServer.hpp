@@ -17,7 +17,6 @@ class WebServer
 			std::vector < int > serverFd; //자료형 고려
 			std::map < int, Server > serverMap; // 서버에서 뭘 받아온다면 다시 고려 
 			// EventHandler // 언젠가 꼭 고려해보쟈 ><
-			Parser parser;
 			
 		public : 
 			WebServer(std::string confPath); // ConfigParser 불러옴

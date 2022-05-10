@@ -1,14 +1,12 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include "uniHeader.hpp"
+// # include "uniHeader.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
 
 #include <sys/stat.h>
 #include "Location.hpp"
-
-
 
 #define NOT 0
 #define DIR 1

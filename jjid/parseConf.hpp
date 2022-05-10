@@ -2,7 +2,8 @@
 # define PARSECONF_HPP
 
 # include "parseUtil.hpp"
-# include "WebServer.hpp"
+# include "Server.hpp"
+// # include "WebServer.hpp"
 
 class Parser
 {
@@ -11,7 +12,7 @@ class Parser
 			std::map<std::string, std::vector<std::string> > keyValueMap;
 
 		public : 
-			Parser();
+			// Parser();
             void openConfigfile(std::string confPath);
             std::vector<std::string> parseServerBlock(std::string config);
             void parseCurrLine(std::string contSplit);
