@@ -5,13 +5,22 @@
 			// std::map < int, Server > serverMap; // 서버에서 뭘 받아온다면 다시 고려 
 			// // EventHandler // 언젠가 꼭 고려해보쟈 ><
 
+int checkArg(int ac, char **av, std::string& confPath)
+{
+    if (ac == 2)
+		confPath = av[1];
+	else if (ac == 1)
+		confPath = DEFAULT_PATH;
+	else
+        return (-1);
+    return (0);
+}
 
 WebServer::WebServer(std::string confPath) : confPath(confPath)
 {
 	//  confPath 나중에 리드할때 (파스 컨피그)에서 오류체크할거임
 	std::vector<Server> servers;
 	std::map < int, Server > serverMap; // 서버에서 뭘 받아온다면 다시 고려 
-	
 	// std::vector < int > serverFd; //자료형 고려
 	// EventHandler // 언젠가 꼭 고려해보쟈 ><
 }
@@ -19,13 +28,10 @@ WebServer::WebServer(std::string confPath) : confPath(confPath)
 
 void WebServer::parseConfig()
 {
-	// hyopark 유언
-    std::string config;
-    
-    config = openConfigfile(this->confPath);
-    if(config.empty() == 1)
+    parser.openConfigfile(this->confPath);
+    if (parser.getConfig().empty() == 1)
 		printErr("Can not open file.");
-    this->servers = makeServers(config);
+    this->servers = parser.makeServers();
     if (this->servers.size() == 0)
         printErr("Can not make servers.");
 }

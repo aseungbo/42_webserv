@@ -6,7 +6,7 @@
 #include <string>
 #include <map>
 #include <vector>
-
+#include <sstream>
 
 //socket
 #include <sys/types.h>
