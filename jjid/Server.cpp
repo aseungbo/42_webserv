@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-void Server::setHost(std::vector<std::string> hosts)
+void Server::setHosts(std::vector<std::string> hosts)
 {
 	this->hosts = hosts;
 }
@@ -15,8 +15,22 @@ void Server::setClientBodySize(int clientBodySize)
 	this->clientBodySize = clientBodySize;
 }
 
+// void Server::setAllowMethod(std::vector<std::string> allowMethod)
+// {
+// 	this->allowMethod = allowMethod;
+// }
+
+void Server::setIndex(std::vector<std::string> index)
+{
+	this->index = index;
+}
+
+// void Server::setErrPage(std::map<std::vector<int>, std::string> errPage)
+// {
+// 	this->errPage = errPage;
+// }
+
 // void Server::setLocation(std::vector<Location> locations);
-// void Server::setErrPage(std::map<std::vector<int>, std::string> errPage);
 
 std::vector<std::string> Server::getHost()
 {
