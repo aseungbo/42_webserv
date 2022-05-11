@@ -6,13 +6,15 @@
 # include "Response.hpp"
 
 #include <sys/stat.h>
+#include <cstdio>
 #include "Location.hpp"
 
 #define NOT 0
 #define DIR 1
 #define FILE 2
 
-#define DEFAULT_INDEX "index.html"
+// #define DEFAULT_INDEX "index.html"
+#define DEFAULT_INDEX "youpi.bad_extension"
 // #define LINK 3
 
 #define YES_HEAD 1

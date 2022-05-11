@@ -3,10 +3,10 @@
 std::string Response::writeResponseMessage()
 {
 	std::string returnString = "";
-	this->statusCode = 200; // test
-	returnString = "HTTP/1.1 " + std::to_string(statusCode) + searchStatusCodeMessage(statusCode) + "\n" + getBody();
-	returnString = "HTTP/1.1 200 GOOD\r\nDate: a\r\nServer: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: close\r\nContent-Type: text/html\r\nContent-Length: " + std::to_string(getBody().size()) +  "\r\n\n" + getBody() ;	
-	std::cout << returnString << std::endl;
+	// this->statusCode = 200; // test
+	returnString = "HTTP/1.1 " + std::to_string(statusCode);// + searchStatusCodeMessage(statusCode) + "\n" + getBody();
+	returnString = returnString + " Gooood\r\nDate: a\r\nServer: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: close\r\nContent-Type: text/html;charset=UTF-8\r\nContent-Length: " + std::to_string(getBody().size()) +  "\r\n\n" + getBody() ; 
+	// std::cout << returnString << std::endl;
 	return (returnString);
 }
 

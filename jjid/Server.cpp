@@ -172,18 +172,29 @@ void Server::openFile(std::string path, int isHead)
 		}
 	}
 	else {
-		std::cout << "파일을 찾을 수 없습니다!" << std::endl;
+		std::cout << path +  " " << "파일을 찾을 수 없습니다!" << std::endl;
 		in.close();
 		// throw (404);//catch해서 set다 호출할것 TODO
 		return;
 	}
-	this->currResponse.setStatusCode(200);
+	if (isHead == NO_HEAD)
+		this->currResponse.setStatusCode(200);
+	else
+		this->currResponse.setStatusCode(405);
 	this->currResponse.setBody(body);
 	
 	std::cout << "whereis test::::\n";
 	std::cout << "test:::: " << currResponse.writeResponseMessage()<<std::endl;
 	in.close();
 	return ;
+}
+
+std::string whereIsRoot(std::string path, Location currLocation)
+{
+	// std::string retPath;
+	
+	// path = 
+	return ("." +currLocation.getRoot() + "/");
 }
 
 void Server::getMethod(int isHead)
@@ -193,6 +204,11 @@ void Server::getMethod(int isHead)
 	int pathType = checkPath(path);
 	std::cout << path <<std::endl;
 	Location currLocation = whereIsLocation(path, pathType, locations);//find or  map match 등 다른이름 추천받음
+	
+	path = whereIsRoot(path,currLocation);
+	pathType = checkPath(path);
+	
+	// currLocation.getRoot() + "/" + this->currRequest.getStartLine().path;
 	
 	// 파일 디렉토리 링크 등으로 뱉어낼거임
 	//디렉토리 -> 인덱스파일 탐색
@@ -222,12 +238,56 @@ void Server::postMethod()
 {
 	// 기존 파일이 있는지 확인 후 있으면 수정, 없으면 크리에이트 , 디렉토리면...?일단 에러
 	// 쿼리날리는거, 디비접근 등도 고려해야하는지 섭젝 읽어볼것
+		// std::string path = this->currRequest.getStartLine().path;
+	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것
+	// std::cout << "postmethod:: " << path << std::endl;
+	// int pathType = checkPath(path);
+	
+	
+	std::string path = this->currRequest.getStartLine().path;
+	path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것
+	int pathType = checkPath(path);
+	Location currLocation = whereIsLocation(path, pathType, locations);
+	serchIndex(path, currLocation);
+	
+	std::cout << path <<std::endl;
+	int fd;
+	
+	if (pathType == FILE || pathType == DIR)
+	{
+		std::cout << "file " << std::endl;
+		if ((fd = open(path.c_str(), O_WRONLY | O_APPEND | O_NONBLOCK, 0644)) == -1)
+			return ;//500
+	}
+	else if (pathType == NOT)
+	{
+	std::cout << "not " << std::endl;
+		if ((fd = open(path.c_str(), O_WRONLY | O_CREAT | O_NONBLOCK, 0644)) == -1)
+			return ;//500
+	}
+	else if (pathType == DIR)
+	{   
+	std::cout << "dir " << std::endl;
+		return ;//403;
+	}
+	currResponse.setStatusCode(201);
+	std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
+	if (currRequest.getBody().size() > 0)
+		write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
+	else
+		{currResponse.setStatusCode(405);}
+	close(fd);
 	
 }
 
 void Server::deleteMethod()
 {
-		
+	std::string path = this->currRequest.getStartLine().path;
+	path = "." + path;
+	currResponse.setStatusCode(200);
+	this->currResponse.setBody("complite delete");
+	
+	std::remove(path.c_str());
 }
 
 // void Server::headMethod()

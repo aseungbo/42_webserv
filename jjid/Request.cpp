@@ -83,23 +83,12 @@ void Request::parseRequestMessage(std::string requestMessage)
 	std::vector<std::string> parseRequest = splitRequestMessage(requestMessage, '\n');
 	
 	//맨마지막은 '\n'
-	int i = 0;
-	initStartLine(parseRequest[i++]);	
-	for (std::vector<std::string>::iterator iter = parseRequest.begin() + 1; *iter != "\r"; iter++)
+	initStartLine(parseRequest[0]);	
+	std::vector<std::string>::iterator iter = parseRequest.begin() + 1;
+	for (; (*iter) != "\r" && iter != parseRequest.end(); iter++)
 		header.getContent().insert(initRequestHeader(*iter));
-
-	std::cout << "<<<<<<<<<<<<<<<" << std::endl;
-	std::cout << "extension : " << "[" << extension << "]" << std::endl;
-	std::cout << ">>>>>>>>>>>>>>>" << std::endl;
-	
-
-	for (std::map <std::string, std::string>::iterator iter = header.getContent().begin(); iter != header.getContent().end(); iter++)
-		std::cout << (*iter).first << " " << (*iter).second << std::endl;
-	
-	
-
-	// cgi
-	// cgi = false;
+	for (; iter != parseRequest.end(); iter++)
+		body += (*iter + "\n");
 }
 
 t_StartLine Request::getStartLine()
