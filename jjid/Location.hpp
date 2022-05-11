@@ -8,13 +8,12 @@ class Location
 	{
 		private:
 			std::string root;
-			// std::string index;
+			std::string path;
 			std::vector<std::string> index;
+			// std::vector<std::string> methodsAllowed;
 			// bool autoIndex;
 			// std::map<std::vector<int>, std::string> errPage;
-			std::vector<std::string> methodsAllowed;
 			
-			std::string path;
 			
 		public:
 			std::string getRoot();
@@ -22,8 +21,13 @@ class Location
 			// bool getAutoIndex();
 			// std::map<std::vector<int>, std::string> getErrPage();
 			std::vector<std::string> getMethodsAllowed();
-			
 			std::string getPath();
+
+			void setRoot(std::string root);
+			void setPath(std::string path);
+			void setIndex(std::vector<std::string> index);
+			// void setMethodsAllowed(std::vector<std::string> methodsAllowed);
+			
 			
 	};
 

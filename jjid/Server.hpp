@@ -27,10 +27,10 @@ class Server
 			std::vector<std::string> hosts;//Host 클래스로 만들어서 호스트정보는 저장하고 메서드로 아이피 주소 퉤 하는 거 만들고싶다 
 			int port;
 			int clientBodySize;//이거 리퀘스트냐?? 리스폰스냐? 나중에 찌가 알아오기
-			// std::vector<std::string> allowMethod;
 			std::vector<std::string> index;
-			// std::vector<std::string> errPage;
 			std::vector<Location> locations;
+			// std::vector<std::string> allowMethod;
+			// std::vector<std::string> errPage;
 			
 			//서버 상태 필요할듯 청크에서 등
 			Request currRequest;
@@ -55,13 +55,15 @@ class Server
 			void setClientBodySize(int clientBodySize);
 			void setAllowMethod(std::vector<std::string> allowMethod);
 			void setIndex(std::vector<std::string> index);
+			void setLocation(std::vector<Location> locations);
 			// void setErrPage(std::map<std::vector<int>, std::string> errPage);
-			// void setLocation(std::vector<Location> locations);
 			
 			// get
 			std::vector<std::string> getHost();
 			int getPort();
 			int getClientBodySize();
+			std::vector<std::string> getIndex();
+			std::vector<Location> getLocations();
 			Request& getRequestClass();
 			Response& getResponseClass();
 			
