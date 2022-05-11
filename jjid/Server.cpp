@@ -30,7 +30,10 @@ void Server::setIndex(std::vector<std::string> index)
 // 	this->errPage = errPage;
 // }
 
-// void Server::setLocation(std::vector<Location> locations);
+void Server::setLocation(std::vector<Location> locations)
+{
+	this->locations = locations;
+};
 
 std::vector<std::string> Server::getHost()
 {
@@ -45,6 +48,16 @@ int Server::getPort()
 int Server::getClientBodySize()
 {
 	return (clientBodySize);
+}
+
+std::vector<std::string> Server::getIndex()
+{
+	return (index);
+}
+
+std::vector<Location> Server::getLocations()
+{
+	return (locations);
 }
 
 Request& Server::getRequestClass()
