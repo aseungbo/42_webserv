@@ -26,7 +26,6 @@ void Parser::insertExistKey(std::string key, std::vector<std::string> val)
         keyValueMap.find(key)->second.insert(keyValueMap.find(key)->second.end(), val.begin(), val.end());
     else if (locFlag == 1)
         locMap.find(key)->second.insert(locMap.find(key)->second.end(), val.begin(), val.end());
-
 }
 
 void Parser::insertNewKey(std::string key, std::vector<std::string> val)
@@ -140,8 +139,8 @@ Location Parser::initLocation()
         loc.setPath(locMap.find("path")->second[0]);
     if (locMap.find("root") != locMap.end())
         loc.setRoot(locMap.find("root")->second[0]);
-    // if (locMap.find("index") != locMap.end())
-    //     loc.setIndex(locMap.find("index")->second);
+    if (locMap.find("index") != locMap.end())
+        loc.setIndex(locMap.find("index")->second);
     locMap.clear();
     return (loc);
 }
@@ -198,8 +197,6 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             // serv.setErrPage(keyValueMap.find("error_page")->second);
         if (locations.size() != 0)
             serv.setLocation(locations);
-        std::cout << "index: " << serv.getIndex().size() << std::endl;
-        std::cout << "loc size: " << serv.getLocations().size() << std::endl;
         servers.push_back(serv);
     }
     locations.clear();
