@@ -70,6 +70,11 @@ std::map<std::vector<int>, std::string> Server::getErrPage()
 	return (errPage);
 }
 
+std::vector<std::string> Server::getAllowMethod()
+{
+	return (allowMethod);
+}
+
 std::vector<Location> Server::getLocations()
 {
 	return (locations);
