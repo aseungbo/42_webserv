@@ -107,12 +107,7 @@ void    Parser::parseLocPath(std::string currLine)
 
 void    Parser::parseCurrLine(std::string currLine)
 {
-    std::string charsToTrim = " ;";
-    std::string cur;
-
-    trimString(currLine, charsToTrim);
-    cur = transferOneSpace(currLine);
-    std::vector<std::string> lineSplit = charSplit(cur, ' ');
+    std::vector<std::string> lineSplit = splitCurrLine(currLine);
     std::string key = lineSplit[0];
     lineSplit.erase(lineSplit.begin());
     if (getLocFlag() == 0)
@@ -141,8 +136,39 @@ Location Parser::initLocation()
         loc.setRoot(locMap.find("root")->second[0]);
     if (locMap.find("index") != locMap.end())
         loc.setIndex(locMap.find("index")->second);
+    if (locMap.find("error_page") != locMap.end())
+        loc.setErrPage(initErrPage());
     locMap.clear();
     return (loc);
+}
+
+std::map<std::vector<int>, std::string> Parser::initErrPage()
+{
+    std::map<std::vector<int>, std::string> temp;
+    std::vector<int> statusCodes;
+    int size;
+
+    if (locFlag == 0)
+    {
+        if (keyValueMap.find("error_page") != keyValueMap.end())
+        {
+            size = keyValueMap.find("error_page")->second.size();
+            std::string path = keyValueMap.find("error_page")->second[size - 1];
+            for (int i = 0; i < size - 1; i++)
+                statusCodes.push_back(atoi((keyValueMap.find("error_page")->second[i].c_str())));
+            temp.insert(std::pair<std::vector<int>, std::string>(statusCodes, path));
+        }
+    }
+    else if (locFlag == 1)
+    {
+        if (locMap.find("error_page") != locMap.end())
+            size = locMap.find("error_page")->second.size();
+            std::string path = locMap.find("error_page")->second[size - 1];
+            for (int i = 0; i < size - 1; i++)
+                statusCodes.push_back(atoi((locMap.find("error_page")->second[i].c_str())));
+            temp.insert(std::pair<std::vector<int>, std::string>(statusCodes, path));
+    }
+    return (temp);
 }
 
 void    Parser::parseKeyValue(std::string content)
@@ -191,12 +217,12 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             serv.setClientBodySize(atoi((keyValueMap.find("client_max_body_size")->second[0].c_str())));        
         if (keyValueMap.find("index") != keyValueMap.end())
             serv.setIndex(keyValueMap.find("index")->second);
-        // if (keyValueMap.find("limit_except") != keyValueMap.end())
-        //     serv.setAllowMethod(keyValueMap.find("limit_except")->second);
-        // if (keyValueMap.find("error_page") != keyValueMap.end())
-            // serv.setErrPage(keyValueMap.find("error_page")->second);
+        if (keyValueMap.find("error_page") != keyValueMap.end())
+            serv.setErrPage(initErrPage());
         if (locations.size() != 0)
             serv.setLocation(locations);
+        // if (keyValueMap.find("limit_except") != keyValueMap.end())
+        //     serv.setAllowMethod(keyValueMap.find("limit_except")->second);
         servers.push_back(serv);
     }
     locations.clear();

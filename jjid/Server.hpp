@@ -29,8 +29,8 @@ class Server
 			int clientBodySize;//이거 리퀘스트냐?? 리스폰스냐? 나중에 찌가 알아오기
 			std::vector<std::string> index;
 			std::vector<Location> locations;
+			std::map<std::vector<int>, std::string> errPage;
 			// std::vector<std::string> allowMethod;
-			// std::vector<std::string> errPage;
 			
 			//서버 상태 필요할듯 청크에서 등
 			Request currRequest;
@@ -40,7 +40,7 @@ class Server
 			int clientSocket;
 			
 		protected:
-			std::map<std::vector<int>, std::string> errPage; // errCode , Page;
+			// std::map<std::vector<int>, std::string> errPage; // errCode , Page;
 			
 		public:
 			// Server();
@@ -53,16 +53,17 @@ class Server
 			void setHosts(std::vector<std::string> hosts);
 			void setPort(int port);
 			void setClientBodySize(int clientBodySize);
-			void setAllowMethod(std::vector<std::string> allowMethod);
 			void setIndex(std::vector<std::string> index);
+			void setErrPage(std::map<std::vector<int>, std::string> errPage);
 			void setLocation(std::vector<Location> locations);
-			// void setErrPage(std::map<std::vector<int>, std::string> errPage);
+			// void setAllowMethod(std::vector<std::string> allowMethod);
 			
 			// get
 			std::vector<std::string> getHost();
 			int getPort();
 			int getClientBodySize();
 			std::vector<std::string> getIndex();
+			std::map<std::vector<int>, std::string> getErrPage();
 			std::vector<Location> getLocations();
 			Request& getRequestClass();
 			Response& getResponseClass();
