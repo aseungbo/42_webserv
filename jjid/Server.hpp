@@ -15,6 +15,7 @@
 
 // #define DEFAULT_INDEX "index.html"
 #define DEFAULT_INDEX "youpi.bad_extension"
+#define DEFAULT_ROOT "."
 // #define LINK 3
 
 #define YES_HEAD 1

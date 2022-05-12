@@ -133,10 +133,11 @@ Location Server::whereIsLocation(std::string &path, std::vector<Location> locati
 {
 	// TODO : 로케이션이 디렉토리형식인지 파일형식인지 구분해서 다르게 처리 할 것
 	//테스트 해보니까 로케이션이 없는경우 기본값 로케이션으로 하나봄 -> 메서드로 기본값로케이션 반환하는 거 하나 만들어서 (로케이션 사이즈가 0이거나 일치하는 로케이션이 없을때)에 예외처리 ㄱ
+	//김진베는 뎁스로 가능한 로케이션 다 확인해서 구체적인거-> 일반적인거 순서로 해본다함
 	std::string orginPath = path;
 	if (locations.size() == 0 )//|| pathType == )
 	{
-		path = "." + path;// TODO : 디폴트의 루트를 넣어줘야함
+		path = DEFAULT_ROOT + path;// TODO : 디폴트의 루트를 넣어줘야함
 		return (getDefaultLocation());
 	}
 	//형식 맞춰줌 인덱싱으로 연산 빠를 거라고 예상...	
@@ -236,7 +237,7 @@ void Server::getMethod(int isHead)
 	Location currLocation = whereIsLocation(path, locations);//find or  map match 등 다른이름 추천받음
 	int pathType = checkPath(path);
 	// std::cout << path << std::endl;
-	
+
 	// path = whereIsRoot(path,currLocation);
 	pathType = checkPath(path);
 	std::cout << "switch path : " << path <<std::endl;
