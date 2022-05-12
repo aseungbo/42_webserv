@@ -28,10 +28,11 @@ class Server
 			std::vector<std::string> hosts;//Host 클래스로 만들어서 호스트정보는 저장하고 메서드로 아이피 주소 퉤 하는 거 만들고싶다 
 			int port;
 			int clientBodySize;//이거 리퀘스트냐?? 리스폰스냐? 나중에 찌가 알아오기
+			std::string root;
 			std::vector<std::string> index;
 			std::vector<Location> locations;
 			std::map<std::vector<int>, std::string> errPage;
-			// std::vector<std::string> allowMethod;
+			std::vector<std::string> allowMethod;
 			
 			//서버 상태 필요할듯 청크에서 등
 			Request currRequest;
@@ -51,21 +52,24 @@ class Server
 			void setClientSocket(int socketFd) { this->clientSocket = socketFd; }
 			
 			// set
+			void setRoot(std::string root);
 			void setHosts(std::vector<std::string> hosts);
 			void setPort(int port);
 			void setClientBodySize(int clientBodySize);
 			void setIndex(std::vector<std::string> index);
 			void setErrPage(std::map<std::vector<int>, std::string> errPage);
 			void setLocation(std::vector<Location> locations);
-			// void setAllowMethod(std::vector<std::string> allowMethod);
+			void setAllowMethod(std::vector<std::string> allowMethod);
 			
 			// get
+			std::string getRoot();
 			std::vector<std::string> getHost();
 			int getPort();
 			int getClientBodySize();
 			std::vector<std::string> getIndex();
 			std::map<std::vector<int>, std::string> getErrPage();
 			std::vector<Location> getLocations();
+			std::vector<std::string> getAllowMethod();
 			Request& getRequestClass();
 			Response& getResponseClass();
 			

@@ -209,6 +209,8 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
     {
         Server serv;
         
+        if (keyValueMap.find("root") != keyValueMap.end())
+            serv.setRoot(keyValueMap.find("root")->second[0]);
         if (keyValueMap.find("server_name") != keyValueMap.end())
             serv.setHosts(keyValueMap.find("server_name")->second);
         if (keyValueMap.find("listen") != keyValueMap.end())
