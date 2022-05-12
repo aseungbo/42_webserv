@@ -23,6 +23,11 @@ class Response
 			int getStatusCode();
 			Header getHeader();
 			std::string getBody();
+			
+			
+			std::string statusMessage(size_t code);
+			std::string setErrorResponse(int statusCode);
+
 	};
 
 #endif
