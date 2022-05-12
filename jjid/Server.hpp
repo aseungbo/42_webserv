@@ -21,6 +21,9 @@
 #define YES_HEAD 1
 #define NO_HEAD 0
 
+#define ADDED_INDEX 1
+#define ADD_INDEX_FAIL 0
+
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
@@ -84,7 +87,7 @@ class Server
 			Location whereIsLocation(std::string &path, std::vector<Location> locations);
 			Location getDefaultLocation();
 			
-			void serchIndex(std::string &path, Location currLocation);
+			int serchIndex(std::string &path, Location currLocation);
 			void openFile(std::string path, int isHead);
 			
 			
