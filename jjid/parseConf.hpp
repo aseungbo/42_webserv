@@ -21,6 +21,7 @@ class Parser
             std::vector<std::string> parseServerBlock(std::string config);
             void parseCurrLine(std::string currLine);
             void parseLocPath(std::string currLine);
+            void parseAllowMethod(std::string currLine);
             void parseKeyValue(std::string content);
             std::map<std::vector<int>, std::string> initErrPage();
             Location initLocation();
@@ -35,6 +36,7 @@ class Parser
             void setLocFlag(int flag);
             void insertExistKey(std::string key, std::vector<std::string> val);
             void insertNewKey(std::string key, std::vector<std::string> val);
+            void insertKeyValue(std::string key, std::vector<std::string> val);
 };
 
 #endif

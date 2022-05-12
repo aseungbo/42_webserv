@@ -36,6 +36,24 @@ void Parser::insertNewKey(std::string key, std::vector<std::string> val)
         locMap.insert(std::pair<std::string, std::vector<std::string> >(key, val));
 }
 
+void Parser::insertKeyValue(std::string key, std::vector<std::string> val)
+{
+    if (getLocFlag() == 0)
+    {
+        if (keyValueMap.find(key) != keyValueMap.end())
+            insertExistKey(key, val);
+        else
+            insertNewKey(key, val);
+    }
+    else if (getLocFlag() == 1)
+    {
+        if (locMap.find(key) != locMap.end())
+            insertExistKey(key, val);
+        else
+            insertNewKey(key, val);
+    }
+}
+
 void Parser::openConfigfile(std::string confPath)
 {
     std::ifstream fin(confPath);
@@ -110,20 +128,23 @@ void    Parser::parseCurrLine(std::string currLine)
     std::vector<std::string> lineSplit = splitCurrLine(currLine);
     std::string key = lineSplit[0];
     lineSplit.erase(lineSplit.begin());
-    if (getLocFlag() == 0)
+    insertKeyValue(key, lineSplit);
+}
+
+void Parser::parseAllowMethod(std::string currLine)
+{
+    std::vector<std::string> lineSplit = splitCurrLine(currLine);
+    std::string key = lineSplit[0];
+    lineSplit.erase(lineSplit.begin());
+
+    std::vector<std::string> allowVec;
+    for (int i = 0; i < lineSplit.size(); i++)
     {
-        if (keyValueMap.find(key) != keyValueMap.end())
-            insertExistKey(key, lineSplit);
-        else
-            insertNewKey(key, lineSplit);
+        if (lineSplit[i].find("{") != std::string::npos)
+            break;
+        allowVec.push_back(lineSplit[i]);
     }
-    else if (getLocFlag() == 1)
-    {
-        if (locMap.find(key) != locMap.end())
-            insertExistKey(key, lineSplit);
-        else
-            insertNewKey(key, lineSplit);
-    }
+    insertKeyValue(key, allowVec);
 }
 
 Location Parser::initLocation()
@@ -138,6 +159,8 @@ Location Parser::initLocation()
         loc.setIndex(locMap.find("index")->second);
     if (locMap.find("error_page") != locMap.end())
         loc.setErrPage(initErrPage());
+    if (locMap.find("limit_except") != locMap.end())
+        loc.setAllowMethod(locMap.find("limit_except")->second);
     locMap.clear();
     return (loc);
 }
@@ -190,6 +213,8 @@ void    Parser::parseKeyValue(std::string content)
                 locations.push_back(initLocation());
                 setLocFlag(0);
             }
+            else if (contSplit[i].find("limit_except") != std::string::npos)
+                parseAllowMethod(contSplit[i]);
             else if (contSplit[i].find(";") != std::string::npos)
                 parseCurrLine(contSplit[i]);
             // else
@@ -221,10 +246,26 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             serv.setIndex(keyValueMap.find("index")->second);
         if (keyValueMap.find("error_page") != keyValueMap.end())
             serv.setErrPage(initErrPage());
+        if (keyValueMap.find("limit_except") != keyValueMap.end())
+            serv.setAllowMethod(keyValueMap.find("limit_except")->second);
         if (locations.size() != 0)
             serv.setLocation(locations);
-        // if (keyValueMap.find("limit_except") != keyValueMap.end())
-        //     serv.setAllowMethod(keyValueMap.find("limit_except")->second);
+        
+        // only for TEST
+        // std::cout << "serv root: " << serv.getRoot() << std::endl;
+        // std::cout << "serv name: " << serv.getHost()[0]<< std::endl;
+        // std::cout << "serv name: " << serv.getHost()[1]<< std::endl;
+        // std::cout << "serv listen: " << serv.getPort()<< std::endl;
+        // std::cout << "serv client body: " << serv.getClientBodySize() << std::endl;
+        // std::cout << "serv index: " << serv.getIndex()[0] << std::endl;
+        // std::cout << "serv index: " << serv.getIndex()[1] << std::endl;
+        // std::cout << "serv err page: " << serv.getErrPage().begin()->first[0] << std::endl;
+        // std::cout << "serv err page: " << serv.getErrPage().begin()->second << std::endl;
+        // std::cout << "serv allow func: " << serv.getAllowMethod()[0] << std::endl;
+        // std::cout << "serv allow func: " << serv.getAllowMethod()[1] << std::endl;
+        // std::cout << "serv loca: " << serv.getLocations().begin()->getAllowMethod()[0] << std::endl;
+        // std::cout << "serv loca: " << serv.getLocations().begin()->getAllowMethod()[1] << std::endl;
+        // std::cout << "serv loc path: " << serv.getLocations().begin()->getPath() << std::endl;
         servers.push_back(serv);
     }
     locations.clear();
@@ -234,7 +275,6 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
 std::vector<Server> Parser::makeServers()
 {
     std::vector<Server> servers;
-    std::cout << "server size: " << servers.size() << std::endl;
     std::vector<std::string> serverBlocks = parseServerBlock(config);
     std::vector<std::string>::iterator serverBlock = serverBlocks.begin();
 
@@ -243,6 +283,5 @@ std::vector<Server> Parser::makeServers()
         initServer(servers, *serverBlock);
         serverBlock++;
     }
-    std::cout << "after server size: " << servers.size() << std::endl;
     return (servers);
 }
