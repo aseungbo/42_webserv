@@ -76,11 +76,14 @@ class Server
 			// void headMethod();
 			
 			
-			Location whereIsLocation(std::string path, int pathType, std::vector<Location> locations);
+			Location whereIsLocation(std::string &path, std::vector<Location> locations);
 			Location getDefaultLocation();
 			
 			void serchIndex(std::string &path, Location currLocation);
 			void openFile(std::string path, int isHead);
+			
+			
+			void setErrorResponse(int statusCode);
 			
 	};
 
