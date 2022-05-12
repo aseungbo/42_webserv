@@ -10,22 +10,23 @@ class Location
 			std::string root;
 			std::string path;
 			std::vector<std::string> index;
+			std::map<std::vector<int>, std::string> errPage;
 			// std::vector<std::string> methodsAllowed;
 			// bool autoIndex;
-			// std::map<std::vector<int>, std::string> errPage;
 			
 			
 		public:
 			std::string getRoot();
-			std::vector<std::string> getIndex();
-			// bool getAutoIndex();
-			// std::map<std::vector<int>, std::string> getErrPage();
-			std::vector<std::string> getMethodsAllowed();
 			std::string getPath();
+			std::vector<std::string> getIndex();
+			std::map<std::vector<int>, std::string> getErrPage();
+			// std::vector<std::string> getMethodsAllowed();
+			// bool getAutoIndex();
 
 			void setRoot(std::string root);
 			void setPath(std::string path);
 			void setIndex(std::vector<std::string> index);
+			void setErrPage(std::map<std::vector<int>, std::string> errPage);
 			// void setMethodsAllowed(std::vector<std::string> methodsAllowed);
 			
 			

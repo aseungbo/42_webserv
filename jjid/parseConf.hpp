@@ -22,6 +22,7 @@ class Parser
             void parseCurrLine(std::string currLine);
             void parseLocPath(std::string currLine);
             void parseKeyValue(std::string content);
+            std::map<std::vector<int>, std::string> initErrPage();
             Location initLocation();
             void initServer(std::vector<Server>& servers, std::string content);
             std::vector<Server> makeServers();

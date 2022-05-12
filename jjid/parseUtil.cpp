@@ -54,3 +54,14 @@ std::vector<std::string> charSplit(std::string input, char delimiter)
         answer.push_back(temp);
     return answer;
 }
+
+std::vector<std::string> splitCurrLine(std::string currLine)
+{
+    std::string charsToTrim = " ;";
+    std::string cur;
+
+    trimString(currLine, charsToTrim);
+    cur = transferOneSpace(currLine);
+    std::vector<std::string> lineSplit = charSplit(cur, ' ');
+    return (lineSplit);
+}

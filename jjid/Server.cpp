@@ -15,25 +15,25 @@ void Server::setClientBodySize(int clientBodySize)
 	this->clientBodySize = clientBodySize;
 }
 
-// void Server::setAllowMethod(std::vector<std::string> allowMethod)
-// {
-// 	this->allowMethod = allowMethod;
-// }
-
 void Server::setIndex(std::vector<std::string> index)
 {
 	this->index = index;
 }
 
-// void Server::setErrPage(std::map<std::vector<int>, std::string> errPage)
-// {
-// 	this->errPage = errPage;
-// }
+void Server::setErrPage(std::map<std::vector<int>, std::string> errPage)
+{
+	this->errPage = errPage;
+}
 
 void Server::setLocation(std::vector<Location> locations)
 {
 	this->locations = locations;
 };
+
+// void Server::setAllowMethod(std::vector<std::string> allowMethod)
+// {
+// 	this->allowMethod = allowMethod;
+// }
 
 std::vector<std::string> Server::getHost()
 {
@@ -53,6 +53,11 @@ int Server::getClientBodySize()
 std::vector<std::string> Server::getIndex()
 {
 	return (index);
+}
+
+std::map<std::vector<int>, std::string> Server::getErrPage()
+{
+	return (errPage);
 }
 
 std::vector<Location> Server::getLocations()
