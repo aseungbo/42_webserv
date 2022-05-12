@@ -46,6 +46,7 @@ void WebServer::parseConfig()
 
 void WebServer::listenServers()
 {
+    std::cout << "\033[47;30m[ Available Port ]\033[0m" << std::endl;;
 	for (int idx = 0; idx < this->servers.size() ; idx++)
 	{
 		struct sockaddr_in serverAddr;
@@ -64,7 +65,6 @@ void WebServer::listenServers()
 			printErr("listen error");
 		fcntl(serverSocketFD, F_SETFL, O_NONBLOCK);//넌 이제부터 논블로킹이야
 		this->serverMap.insert(std::pair<int, Server>(serverSocketFD, servers[idx]));
-		std::cout << idx << " " << serverSocketFD;
 	}
 }
 //서버들 리슨 바인드 까지
