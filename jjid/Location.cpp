@@ -21,13 +21,14 @@ std::map<std::vector<int>, std::string> Location::getErrPage()
  return (errPage);
 }
 
+std::vector<std::string> Location::getAllowMethod()
+{
+ return (AllowMethod);
+}
+
 // // bool getAutoIndex()
 // {
 //  return (AutoIndex);
-// }
-// std::vector<std::string> Location::getMethodsAllowed()
-// {
-//  return (methodsAllowed);
 // }
 
 void Location::setRoot(std::string root)
@@ -49,8 +50,9 @@ void Location::setErrPage(std::map<std::vector<int>, std::string> errPage)
 {
 	this->errPage = errPage;
 }
-// void Location::setMethodsAllowed(std::vector<std::string> methodsAllowed)
-// {
-// 	this->methodsAllowed = methodsAllowed;
-// }
+
+void Location::setAllowMethod(std::vector<std::string> AllowMethod)
+{
+	this->AllowMethod = AllowMethod;
+}
 

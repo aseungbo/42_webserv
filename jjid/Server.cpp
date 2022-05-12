@@ -1,5 +1,10 @@
 #include "Server.hpp"
 
+void Server::setRoot(std::string root)
+{
+	this->root = root;
+}
+
 void Server::setHosts(std::vector<std::string> hosts)
 {
 	this->hosts = hosts;
@@ -30,10 +35,15 @@ void Server::setLocation(std::vector<Location> locations)
 	this->locations = locations;
 };
 
-// void Server::setAllowMethod(std::vector<std::string> allowMethod)
-// {
-// 	this->allowMethod = allowMethod;
-// }
+void Server::setAllowMethod(std::vector<std::string> allowMethod)
+{
+	this->allowMethod = allowMethod;
+}
+
+std::string Server::getRoot()
+{
+	return (root);
+}
 
 std::vector<std::string> Server::getHost()
 {
