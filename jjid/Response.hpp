@@ -12,7 +12,7 @@ class Response
 			std::string body;
 	
 		public:
-			std::string writeResponseMessage();//안에 바디사이즈로 청크드 만드는 메서드 호출 하고싶음
+			// std::string ();//안에 바디사이즈로 청크드 만드는 메서드 호출 하고싶음
 			std::string searchStatusCodeMessage(int statusCode);
 			
 			//TODO 구현
@@ -27,7 +27,7 @@ class Response
 			
 			std::string statusMessage(size_t code);
 			std::string setErrorResponse(int statusCode);
-
+			std::string writeResponseMessage();
 	};
 
 #endif

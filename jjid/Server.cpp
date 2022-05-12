@@ -135,6 +135,11 @@ int checkPath(std::string path)
 Location Server::getDefaultLocation()
 {
 	Location defaultLocation;
+	std::vector<std::string > tmpIndex;
+	tmpIndex.push_back("index.html");
+	defaultLocation.setIndex(tmpIndex);
+	defaultLocation.setPath("/");
+	defaultLocation.setRoot(".");
 	//TODO
 	return defaultLocation;
 }
@@ -144,16 +149,18 @@ Location Server::whereIsLocation(std::string &path, std::vector<Location> locati
 	// TODO : 로케이션이 디렉토리형식인지 파일형식인지 구분해서 다르게 처리 할 것
 	//테스트 해보니까 로케이션이 없는경우 기본값 로케이션으로 하나봄 -> 메서드로 기본값로케이션 반환하는 거 하나 만들어서 (로케이션 사이즈가 0이거나 일치하는 로케이션이 없을때)에 예외처리 ㄱ
 	//김진베는 뎁스로 가능한 로케이션 다 확인해서 구체적인거-> 일반적인거 순서로 해본다함
-	std::string orginPath = path;
+	 std::cout << getPort() << getRoot() << "size:: " << locations.size() <<std::endl;
+ 	// std::string orginPath = path;
 	if (locations.size() == 0 )//|| pathType == )
 	{
 		path = DEFAULT_ROOT + path;// TODO : 디폴트의 루트를 넣어줘야함
 		return (getDefaultLocation());
 	}
 	//형식 맞춰줌 인덱싱으로 연산 빠를 거라고 예상...	
-	path = "." + path; // TODO : 만약 서버블록안에도 루트가 있게 구조한다면 서버의 루트를 넣어줘야함
+	path = this->getRoot() + path; // TODO : 만약 서버블록안에도 루트가 있게 구조한다면 서버의 루트를 넣어줘야함
+	std::cout << "seuan : " << path <<std::endl;
 	// if (path[path.length() - 1] != '/')
-	if (path[path.length() - 1] != '/' )//&& checkPath(path) == DIR )
+	if (path[path.length() - 1] != '/'  && checkPath(path) == DIR )
 			path += '/';
 	//반복문 돌면서 일치하는거 확인
 	for (int idx = 0 ; idx < locations.size(); idx++)
@@ -167,50 +174,55 @@ Location Server::whereIsLocation(std::string &path, std::vector<Location> locati
 	return (getDefaultLocation());
 };
 
-void Server::serchIndex(std::string &path, Location currLocation)
+int Server::serchIndex(std::string &path, Location currLocation)
 {
 	struct stat buf;
 	
+	std::cout << "serchIndex" <<std::endl;
 	//설정 인덱스가 없으면 디폴트 인덱스(현재는 index.html파일) 추가 후 종료
 	if (currLocation.getIndex().size() == 0)
 	{
+		std::cout << "index 0 \n" ;
 		path += DEFAULT_INDEX;
-		return ;
+		return ADDED_INDEX;
 	}
 	//설정 인덱스가 있다면 가장 처음 있는 파일 경로 넣고 종료
 	std::vector<std::string> currIndex = currLocation.getIndex();
 	for (int idx = 0; idx < currIndex.size(); idx++)
 	{
 		std::string tryIndexPath = path + currIndex[idx];
+		std::cout << tryIndexPath <<std::endl;
 		if (stat((tryIndexPath).c_str(), &buf) == 0)
 		{
 			path = tryIndexPath;
-			return ;
+			std::cout <<"fin"<< path<<std::endl;
+			return ADDED_INDEX;
 		}
 	}
+	return ADD_INDEX_FAIL;
 }
 
 void Server::openFile(std::string path, int isHead)
 {
-	std::cout << "\nopen call \n";
+	std::cout << "\nopen call \n "<< path<<std::endl;
 	// 파일 읽기 준비
 	std::ifstream in(path);
 	std::string body;
 	if (in.is_open()) {
 		if (isHead == NO_HEAD)
 		{
-		// 위치 지정자를 파일 끝으로 옮긴다.
-		in.seekg(0, std::ios::end);
-		// 그리고 그 위치를 읽는다. (파일의 크기)
-		int size = in.tellg();
-		// 그 크기의 문자열을 할당한다.
-		body.resize(size);
-		// 위치 지정자를 다시 파일 맨 앞으로 옮긴다.
-		in.seekg(0, std::ios::beg);
-		// 파일 전체 내용을 읽어서 문자열에 저장한다.
-		in.read(&body[0], size);
-		
-		// std::cout << body << std::endl;
+			// 위치 지정자를 파일 끝으로 옮긴다.
+			in.seekg(0, std::ios::end);
+			// 그리고 그 위치를 읽는다. (파일의 크기)
+			int size = in.tellg();
+			// 그 크기의 문자열을 할당한다.
+			body.resize(size);
+			// 위치 지정자를 다시 파일 맨 앞으로 옮긴다.
+			in.seekg(0, std::ios::beg);
+			// 파일 전체 내용을 읽어서 문자열에 저장한다.
+			in.read(&body[0], size);
+			
+			// std::cout << body << std::endl;
 		}
 	}
 	else {
@@ -249,7 +261,7 @@ void Server::getMethod(int isHead)
 	// std::cout << path << std::endl;
 
 	// path = whereIsRoot(path,currLocation);
-	pathType = checkPath(path);
+	// pathType = checkPath(path);
 	std::cout << "switch path : " << path <<std::endl;
 	
 	// currLocation.getRoot() + "/" + this->currRequest.getStartLine().path;
@@ -264,7 +276,8 @@ void Server::getMethod(int isHead)
 	switch (pathType)
 	{
 		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
-			serchIndex(path, currLocation);
+			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
+				return (setErrorResponse(403));
 			// break;// 브레이크 안걸면 밑에거 까지 실행해주는걸로 아는디 불안하면 그냥 opneFile호출하시오
 		case FILE ://해당파일찾아볼것 마찬가지로 없다면 403
 			openFile(path, isHead);

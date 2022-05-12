@@ -1,7 +1,7 @@
 #include "Response.hpp"
 	
 
-std::string	Response::statusMessage(size_t code)
+std::string	Response::statusMessage(size_t statusCode)
 {
 	static std::map<size_t, std::string>	status;
 
@@ -60,13 +60,14 @@ std::string	Response::statusMessage(size_t code)
 		status[511] = "Network Authentication Required";
 		status[599] = "Network Connect Timeout Error";
 	}
-	if (status.count(code) == 0)
+	if (status.count(statusCode) == 0)
 	{
-		assert(false);
+		// exit(0);
+		// assert(false);
 		return "";
 	}
 	else
-		return status[code];
+		return status[statusCode];
 }
 
 std::string inHeadMethodNameIsHederMapToString(std::map <std::string, std::string > content)
@@ -87,10 +88,17 @@ std::string Response::setErrorResponse(int statusCode)
 	return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" );//+ inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\n" + getBody());
 }
 
-
+std::string setErrorPage(int statusCode)
+{
+	return ("<!DOCTYPE html><html><head><body> <h1>" + std::to_string(statusCode) +" </h1></body></html>");
+}
 std::string Response::writeResponseMessage()
 {
+	if (statusCode/100 != 2)
+		setErrorPage(statusCode);
+	std::cout <<  ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" + inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\n" + getBody()) << std::endl;;
 	return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" + inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\n" + getBody());
+	
 	// std::string returnString = "";
 	// // this->statusCode = 200; // test
 	// returnString = "HTTP/1.1 " + std::to_string(statusCode);// + searchStatusCodeMessage(statusCode) + "\n" + getBody();

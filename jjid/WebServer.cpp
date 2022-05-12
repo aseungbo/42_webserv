@@ -64,6 +64,7 @@ void WebServer::listenServers()
 			printErr("listen error");
 		fcntl(serverSocketFD, F_SETFL, O_NONBLOCK);//넌 이제부터 논블로킹이야
 		this->serverMap.insert(std::pair<int, Server>(serverSocketFD, servers[idx]));
+		std::cout << idx << " " << serverSocketFD;
 	}
 }
 //서버들 리슨 바인드 까지
@@ -128,11 +129,13 @@ void WebServer::monitorKqueue()
         printErr("kqueue error");
         
     std::map<int, std::string> clients;
+    std::map<int, int> clientsServerMap;
     std::vector <struct kevent> change_list;
-    struct kevent event_list[8];
+    struct kevent event_list[serverMap.size()];
     
     for (std::map<int, Server>::iterator iter = this->serverMap.begin(); iter != this->serverMap.end(); iter++)
     {
+        
         change_events(change_list, iter->first, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	}
 	std::cout << "echo server started" << std::endl;
@@ -146,7 +149,7 @@ void WebServer::monitorKqueue()
     {
         /*  apply changes and return new events(pending events) */
         // std::cout << "Hello JJIDRAGON WORLD" << std::endl;
-        new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
+        new_events = kevent(kq, &change_list[0], change_list.size(), event_list, serverMap.size(), NULL);
         if (new_events == -1)
         {
             // printErr("kevent() error\n");
@@ -173,7 +176,9 @@ void WebServer::monitorKqueue()
             else if (curr_event->filter == EVFILT_READ)
             {
                 // map indexing으로 접근 가능한지 확인해볼 것
+                //TODO : 어떤서버에 연결할지 함수로 만들었으면 좋겠다.
                 std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
+                //알맞은서버찾아서 이터든 뭐든 반환?
                 if (serverIter != serverMap.end())
                 // if (curr_event->ident == serverIter->first)
                 {
@@ -194,6 +199,7 @@ void WebServer::monitorKqueue()
                     change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     change_events(change_list, clientSocket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clients[clientSocket] = "";
+                    clientsServerMap[clientSocket] = serverSocket;
                     // std::cout << "1 " << std::endl;
                     // serverMap[curr_event->ident].processMethod();
                 }
@@ -218,8 +224,12 @@ void WebServer::monitorKqueue()
                         // parse request
                         buf[n] = '\0';
                         clients[curr_event->ident] += buf;
-                        serverMap[curr_event->ident].getRequestClass().parseRequestMessage(clients[curr_event->ident]);
-                        serverMap[curr_event->ident].processMethod();
+                        std::cout << " mapppppp" << serverMap[curr_event->ident].getPort() << std::endl;
+                        
+                        std::cout << " mapppppp" << curr_event->ident << std::endl;
+	                    
+                        serverMap[clientsServerMap[curr_event->ident]].getRequestClass().parseRequestMessage(clients[curr_event->ident]);
+                        serverMap[clientsServerMap[curr_event->ident]].processMethod();
                         // exit(0);
                     }
                 }
@@ -233,7 +243,7 @@ void WebServer::monitorKqueue()
                     int n;
                     // std::string ResponseMessage = serverMap[curr_event->ident].getResponseClass().writeResponseMessage();
                     // std::string ResponseMessage = "HTTP/1.1 200 GOOD\r\nDate: a\r\nServer: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nContent-Length: 6\r\nConnection: close\r\nContent-Type: text/html\r\n\n<h1>My page</h1>";
-                    std::string ResponseMessage = serverMap[curr_event->ident].getResponseClass().writeResponseMessage();
+                    std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
 					                    
                     if ((n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size())) == -1)
                     {
