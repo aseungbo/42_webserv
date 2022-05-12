@@ -209,6 +209,8 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
     {
         Server serv;
         
+        if (keyValueMap.find("root") != keyValueMap.end())
+            serv.setRoot(keyValueMap.find("root")->second[0]);
         if (keyValueMap.find("server_name") != keyValueMap.end())
             serv.setHosts(keyValueMap.find("server_name")->second);
         if (keyValueMap.find("listen") != keyValueMap.end())
@@ -223,6 +225,7 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             serv.setLocation(locations);
         // if (keyValueMap.find("limit_except") != keyValueMap.end())
         //     serv.setAllowMethod(keyValueMap.find("limit_except")->second);
+        std::cout << serv.getRoot() << std::endl;
         servers.push_back(serv);
     }
     locations.clear();
