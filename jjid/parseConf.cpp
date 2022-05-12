@@ -225,7 +225,6 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             serv.setLocation(locations);
         // if (keyValueMap.find("limit_except") != keyValueMap.end())
         //     serv.setAllowMethod(keyValueMap.find("limit_except")->second);
-        std::cout << serv.getRoot() << std::endl;
         servers.push_back(serv);
     }
     locations.clear();
