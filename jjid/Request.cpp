@@ -7,7 +7,10 @@ std::vector<std::string> Request::splitRequestMessage(std::string str, char deli
     std::vector<std::string> result;
     // istringstream은 istream을 상속받으므로 getline을 사용할 수 있다.
     while (std::getline(iss, buffer, delimiter))
+    {
         result.push_back(buffer);               // 절삭된 문자열을 vector에 저장
+	}
+	
 	// result.push_back("\n");
 	// std::cout <<  result[result.size()-1] << std::endl;
 	// printf("d : %d \n", result[result.size()-1][0] );
@@ -78,8 +81,9 @@ std::pair <std::string, std::string> Request::initRequestHeader(const std::strin
 
 void Request::parseRequestMessage(std::string requestMessage)
 {
+	if (requestMessage.c_str() == 0)
+		return ;
 	// std::cout << requestMessage << std::endl;
-
 	std::vector<std::string> parseRequest = splitRequestMessage(requestMessage, '\n');
 	
 	//맨마지막은 '\n'
@@ -87,6 +91,7 @@ void Request::parseRequestMessage(std::string requestMessage)
 	std::vector<std::string>::iterator iter = parseRequest.begin() + 1;
 	for (; (*iter) != "\r" && iter != parseRequest.end(); iter++)
 		header.getContent().insert(initRequestHeader(*iter));
+
 	for (; iter != parseRequest.end(); iter++)
 		body += (*iter + "\n");
 }

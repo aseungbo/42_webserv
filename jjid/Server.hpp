@@ -84,7 +84,8 @@ class Server
 			// void headMethod();
 			
 			
-			Location whereIsLocation(std::string &path, std::vector<Location> locations);
+			// Location whereIsLocation(std::string &path, std::vector<Location> locations);
+			Location whereIsLocation(std::string const & path);
 			Location getDefaultLocation();
 			
 			int serchIndex(std::string &path, Location currLocation);
