@@ -114,6 +114,9 @@ void Server::processMethod()
 		case POST:
 			postMethod();
 			break;
+		case -1:
+			postMethod();
+			break;
 		case DELETE:
 			deleteMethod();
 			break;
@@ -124,14 +127,20 @@ void Server::processMethod()
 	}
 }
 
-int checkPath(std::string path)
+int checkPath(std::string &path)
 {
 	struct stat buf;
-
+	std::string originPath = path;
+	
+	if (path[path.size()-1] == '/')
+		path.erase(path.size()-1);
 	if (stat(path.c_str(), &buf) == -1)
 		return NOT;
 	if (S_ISDIR(buf.st_mode)) // 테스트해본결과 /로 끝나던 말던 디렉토리면 걍 디렉토리임
+	{
+		path = originPath;
 		return DIR;
+	}
 	else if (S_ISREG(buf.st_mode))
 		return FILE;
 	// else if (S_ISLNK())
@@ -157,49 +166,82 @@ Location Server::getDefaultLocation()
 	
 // }
 
-Location Server::whereIsLocation(std::string &path, std::vector<Location> locations)
+Location Server::whereIsLocation(std::string const & path)
 {
-	// TODO : 로케이션이 디렉토리형식인지 파일형식인지 구분해서 다르게 처리 할 것
-	//테스트 해보니까 로케이션이 없는경우 기본값 로케이션으로 하나봄 -> 메서드로 기본값로케이션 반환하는 거 하나 만들어서 (로케이션 사이즈가 0이거나 일치하는 로케이션이 없을때)에 예외처리 ㄱ
-	//김진베는 뎁스로 가능한 로케이션 다 확인해서 구체적인거-> 일반적인거 순서로 해본다함
-	 std::cout << getPort() << getRoot() << "size:: " << locations.size() <<std::endl;
- 	std::string originpath = path;
-	if (locations.size() == 0 )//|| pathType == )
+	Location currLocation;
+	std::vector < Location > locationVector = this->getLocations();
+	
+	for (int idx = 0 ; idx < locationVector.size(); idx++)
 	{
-		path = DEFAULT_ROOT + path;// TODO : 디폴트의 루트를 넣어줘야함
-		return (getDefaultLocation());
-	}
-	//형식 맞춰줌 인덱싱으로 연산 빠를 거라고 예상...	
-	// 아무거토 없을때 현재로케이션에 있/없 서버에 있/없
-	path = this->getRoot() + path; // TODO : 만약 서버블록안에도 루트가 있게 구조한다면 서버의 루트를 넣어줘야함
-	std::cout << "seuan : " << path <<std::endl;
-	// if (path[path.length() - 1] != '/')
-	if (path[path.length() - 1] != '/'  && checkPath(path) == DIR )
-			path += '/';
-	//반복문 돌면서 일치하는거 확인
-	for (int idx = 0 ; idx < locations.size(); idx++)
-	{
-		std::cout << "loca get path" << locations[idx].getPath() << std::endl;
-		std::string locationPath = locations[idx].getPath();
-		// if (locationPath[locationPath.length() - 1] != '/')
-		// 	locationPath += '/';
-		// if (checkLocation(locationPath,originpath))
-		// {
-		
-		if (originpath.find(locationPath) == 0)
+		std::string findPath = locationVector[idx].getPath();
+		if (findPath.size() > 1 && findPath[findPath.size()-1] == '/')
 		{
-			path = locations[idx].getRoot() + originpath.substr(0,locationPath.size());
-			// path = (originpath.replace(0,locationPath.size(),locations[idx].getRoot()));
-			std::cout << "path::: " << path << "or "<<originpath << std::endl;
-			// path = originpath.erase(0, locations[idx].getRoot().size());
-			// path = locations[idx].getRoot() + originpath.substr(path.size(),locationPath.size());
-			// // TODO getRoot 도 / 추가 할지말지
-			// path = locations[idx].getRoot() ;//+ "/" ;//+ originpath; // alias 면 이거 , root면 오리진페스 까지 추가하면됨
-			return (locations[idx]);
+			findPath.erase(findPath.size() - 1);
+			std::cout << "findpath erase : " << findPath << std::endl;
+		}
+		if (path.find(findPath) == 0)
+		{
+			return (locationVector[idx]);
 		}
 	}
+	
 	return (getDefaultLocation());
-};
+}
+
+// Location Server::whereIsLocation(std::string &path, std::vector<Location> locations)
+// {
+// 	// TODO : 로케이션이 디렉토리형식인지 파일형식인지 구분해서 다르게 처리 할 것
+// 	//테스트 해보니까 로케이션이 없는경우 기본값 로케이션으로 하나봄 -> 메서드로 기본값로케이션 반환하는 거 하나 만들어서 (로케이션 사이즈가 0이거나 일치하는 로케이션이 없을때)에 예외처리 ㄱ
+// 	//김진베는 뎁스로 가능한 로케이션 다 확인해서 구체적인거-> 일반적인거 순서로 해본다함
+// 	std::cout << getPort() << getRoot() << "size:: " << locations.size() <<std::endl;
+//  	std::string originpath = path;
+// 	if (locations.size() == 0 )//|| pathType == )
+// 	{
+// 		path = DEFAULT_ROOT + path;// TODO : 디폴트의 루트를 넣어줘야함
+// 		return (getDefaultLocation());
+// 	}
+// 	//형식 맞춰줌 인덱싱으로 연산 빠를 거라고 예상...	
+// 	// 아무거토 없을때 현재로케이션에 있/없 서버에 있/없
+// 	path = this->getRoot() + path; // TODO : 만약 서버블록안에도 루트가 있게 구조한다면 서버의 루트를 넣어줘야함
+// 	std::cout << "seuan : " << path <<std::endl;
+// 	// if (path[path.length() - 1] != '/')
+// 	if (path[path.length() - 1] != '/'  && checkPath(path) == DIR )
+// 			path += '/';
+// 	//반복문 돌면서 일치하는거 확인
+// 	for (int idx = 0 ; idx < locations.size(); idx++)
+// 	{
+// 		std::cout << "loca get path" << locations[idx].getPath() << std::endl;
+// 		std::string locationPath = locations[idx].getPath();
+// 		// if (locationPath[locationPath.length() - 1] != '/')
+// 		// 	locationPath += '/';
+// 		// if (checkLocation(locationPath,originpath))
+// 		// {
+		
+// 		if (originpath.find(locationPath) == 0)
+// 		{
+// 			std::cout <<  "ori : " << originpath <<std::endl;
+// 			std::cout <<  "location : " << locationPath <<std::endl;
+// 			if (locationPath.size() != originpath.size())
+// 			{
+// 				path = locations[idx].getRoot() + originpath.substr(locationPath.size(), originpath.size() - locationPath.size() );
+// 				std::cout << "get root : " <<locations[idx].getRoot() << " sub :: " << originpath.substr(locationPath.size(), originpath.size() - locationPath.size() ) << "path : " << path << std::endl; 
+// 			}
+// 			else
+// 				path = locations[idx].getRoot() ;
+// 			std::cout <<  "sub : " << originpath.substr(locationPath.size(), originpath.size() - locationPath.size() ) <<std::endl;
+			
+// 			// path = locations[idx].getRoot() + originpath;
+// 			// path = (originpath.replace(0,locationPath.size(),locations[idx].getRoot()));
+// 			std::cout << "path::: " << path << " ori::: "<<originpath << std::endl;
+// 			// path = originpath.erase(0, locations[idx].getRoot().size());
+// 			// path = locations[idx].getRoot() + originpath.substr(path.size(),locationPath.size());
+// 			// // TODO getRoot 도 / 추가 할지말지
+// 			// path = locations[idx].getRoot() ;//+ "/" ;//+ originpath; // alias 면 이거 , root면 오리진페스 까지 추가하면됨
+// 			return (locations[idx]);
+// 		}
+// 	}
+// 	return (getDefaultLocation());
+// }
 
 int Server::serchIndex(std::string &path, Location currLocation)
 {
@@ -207,6 +249,11 @@ int Server::serchIndex(std::string &path, Location currLocation)
 	
 	std::cout << "serchIndex" <<std::endl;
 	//설정 인덱스가 없으면 디폴트 인덱스(현재는 index.html파일) 추가 후 종료
+	if (path[path.size() - 1] != '/')
+	{
+		setErrorResponse(403);
+		return (ADD_INDEX_FAIL);
+	}
 	if (currLocation.getIndex().size() == 0)
 	{
 		std::cout << "index 0 \n" ;
@@ -226,7 +273,8 @@ int Server::serchIndex(std::string &path, Location currLocation)
 			return ADDED_INDEX;
 		}
 	}
-	return ADD_INDEX_FAIL;
+	setErrorResponse(404);
+	return (ADD_INDEX_FAIL);
 }
 
 void Server::openFile(std::string path, int isHead)
@@ -279,33 +327,36 @@ std::string whereIsRoot(std::string path, Location currLocation)
 	return ("." +currLocation.getRoot() + "/");
 }
 
+void aliasRoot(Location currLocation, std::string &path)
+{
+// path : /aaa
+// locationpath : /aaa/
+// root : ./ccc
+// expect : ./ccc/
+
+	std::string currRoot = currLocation.getRoot();
+	std::string locationPath = currLocation.getPath();
+	
+	if (path[path.size() - 1 ] != '/')
+		path = path + "/";
+	std::string originPath = path;
+	std::cout << "curr Rot : "  << currRoot << "lo path: "<< locationPath << "ori path :" <<  originPath << std::endl;
+	path = currRoot + originPath.substr(locationPath.size(), originPath.size() - locationPath.size() ); 
+}
+
 void Server::getMethod(int isHead)
 {
 	std::string path = this->currRequest.getStartLine().path;
-	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
-	Location currLocation = whereIsLocation(path, locations);//find or  map match 등 다른이름 추천받음
+	Location currLocation = whereIsLocation(path);
+	aliasRoot(currLocation, path);
+		// return (setErrorResponse(403));
+	std::cout << "resul ::" << path << std::endl;
 	int pathType = checkPath(path);
-	// std::cout << path << std::endl;
-
-	// path = whereIsRoot(path,currLocation);
-	// pathType = checkPath(path);
-	std::cout << "switch path : " << path <<std::endl;
-	
-	// currLocation.getRoot() + "/" + this->currRequest.getStartLine().path;
-	
-	// 파일 디렉토리 링크 등으로 뱉어낼거임
-	//디렉토리 -> 인덱스파일 탐색
-	//파일 -> 파일 오픈 -> 오픈 리턴으로 실패확인가능 . ngx_de_access라는 엔진엑스 매크로함수 처럼 권한 체크할지는 추후판단
-	//링크는 어떻게 해야할까(링크타고 찾아간다 등) 일단 보류
-	
-	//설정한 인덱스가 디렉토리인 경우를 생각했을때 실제 탐색해볼 주소를 완성하기 위한 serchIndex(처리될 로케이션의 정보를 가지고 Path를 완성시킴)
-	// if (checkPath(path) == DIR)
 	switch (pathType)
 	{
 		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
 			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
-				return (setErrorResponse(403));
-			// break;// 브레이크 안걸면 밑에거 까지 실행해주는걸로 아는디 불안하면 그냥 opneFile호출하시오
+				return ;
 		case FILE ://해당파일찾아볼것 마찬가지로 없다면 403
 			openFile(path, isHead);
 			break;
@@ -317,8 +368,49 @@ void Server::getMethod(int isHead)
 			return (setErrorResponse(404));
 			break;
 	}
-
+	
+	
 }
+// void Server::getMethod(int isHead)
+// {
+// 	std::string path = this->currRequest.getStartLine().path;
+// 	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
+// 	Location currLocation = whereIsLocation(path, locations);//find or  map match 등 다른이름 추천받음
+// 	int pathType = checkPath(path);
+// 	// std::cout << path << std::endl;
+
+// 	// path = whereIsRoot(path,currLocation);
+// 	// pathType = checkPath(path);
+// 	std::cout << "switch path : " << path <<std::endl;
+	
+// 	// currLocation.getRoot() + "/" + this->currRequest.getStartLine().path;
+	
+// 	// 파일 디렉토리 링크 등으로 뱉어낼거임
+// 	//디렉토리 -> 인덱스파일 탐색
+// 	//파일 -> 파일 오픈 -> 오픈 리턴으로 실패확인가능 . ngx_de_access라는 엔진엑스 매크로함수 처럼 권한 체크할지는 추후판단
+// 	//링크는 어떻게 해야할까(링크타고 찾아간다 등) 일단 보류
+	
+// 	//설정한 인덱스가 디렉토리인 경우를 생각했을때 실제 탐색해볼 주소를 완성하기 위한 serchIndex(처리될 로케이션의 정보를 가지고 Path를 완성시킴)
+// 	// if (checkPath(path) == DIR)
+// 	switch (pathType)
+// 	{
+// 		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
+// 			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
+// 				return (setErrorResponse(403));
+// 			// break;// 브레이크 안걸면 밑에거 까지 실행해주는걸로 아는디 불안하면 그냥 opneFile호출하시오
+// 		case FILE ://해당파일찾아볼것 마찬가지로 없다면 403
+// 			openFile(path, isHead);
+// 			break;
+// 		case NOT ://404
+// 			return (setErrorResponse(404));
+// 			/* throw 404 error */
+// 			break;
+// 		default:
+// 			return (setErrorResponse(404));
+// 			break;
+// 	}
+
+// }
 
 void Server::postMethod()
 {
@@ -335,10 +427,11 @@ void Server::postMethod()
 	// int pathType = checkPath(path);
 	// Location currLocation = whereIsLocation(path, locations);
 	
-	
+	return (setErrorResponse(405));
 	std::string path = this->currRequest.getStartLine().path;
 	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
-	Location currLocation = whereIsLocation(path, locations);//find or  map match 등 다른이름 추천받음
+	Location currLocation = whereIsLocation(path);//find or  map match 등 다른이름 추천받음
+	
 	int pathType = checkPath(path);
 	// std::cout << path << std::endl;
 
@@ -350,6 +443,7 @@ void Server::postMethod()
 	
 	// std::cout << path <<std::endl;
 	int fd;
+	
 	
 	if (pathType == FILE || pathType == DIR)
 	{
