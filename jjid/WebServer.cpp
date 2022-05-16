@@ -209,6 +209,7 @@ void WebServer::monitorKqueue()
                     // std::cout << "\nelseif\n" <<std::endl;
                     /* read data from client */
                     char buf[1024];
+                    memset(buf, 0, sizeof(char) * 1024);
                     int n = read(curr_event->ident, buf, sizeof(buf));
                     
                     // this-> server.request = Request;
@@ -224,10 +225,26 @@ void WebServer::monitorKqueue()
                         // parse request
                         buf[n] = '\0';
                         clients[curr_event->ident] += buf;
-                        std::cout << " mapppppp" << serverMap[curr_event->ident].getPort() << std::endl;
+
+                        static int cnt = 0;
+                        std::cout << "curr ident: " << curr_event->ident << std::endl;
+                        std::cout << "cnt: " << cnt << std::endl;
+                        cnt++;
+
+                        // Buffer 문제 해결해야함.
+                        char buf2[1024];
+                        memset(buf2, 0, sizeof(char) * 1024);
+                        int n = read(curr_event->ident, buf2, sizeof(buf));
+                        if (n > 0)
+                        {
+                            buf2[n] = '\0';
+                            clients[curr_event->ident] += buf2;
+
+                        }
+	                    std::cout << "------------------------ buf ------------------------" << std::endl;
+                        std::cout << clients[curr_event->ident] << std::endl;
+	                    std::cout << "------------------------ buf ------------------------" << std::endl;
                         
-                        std::cout << " mapppppp" << curr_event->ident << std::endl;
-	                    
                         serverMap[clientsServerMap[curr_event->ident]].getRequestClass().parseRequestMessage(clients[curr_event->ident]);
                         serverMap[clientsServerMap[curr_event->ident]].processMethod();
                         // exit(0);
