@@ -200,54 +200,22 @@ void WebServer::monitorKqueue()
                     change_events(change_list, clientSocket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clients[clientSocket] = "";
                     clientsServerMap[clientSocket] = serverSocket;
-                    // std::cout << "1 " << std::endl;
-                    // serverMap[curr_event->ident].processMethod();
                 }
                 else if (clients.find(curr_event->ident) != clients.end())
                 {
-                    // exit(0);
-                    // std::cout << "\nelseif\n" <<std::endl;
-                    /* read data from client */
+                    // parse request
                     char buf[1024];
-                    memset(buf, 0, sizeof(char) * 1024);
                     int n = read(curr_event->ident, buf, sizeof(buf));
-                    
-                    // this-> server.request = Request;
                     if (n <= 0)
                     {
                         if (n < 0)
                             printErr("client read error!");
                         disconnect_client(curr_event->ident, clients);
                     }
-                    else//???????????
+                    else
                     {
-                        // std::cout << "\nelse\n" <<std::endl;
-                        // parse request
                         buf[n] = '\0';
                         clients[curr_event->ident] += buf;
-
-                        static int cnt = 0;
-                        std::cout << "curr ident: " << curr_event->ident << std::endl;
-                        std::cout << "cnt: " << cnt << std::endl;
-                        cnt++;
-
-                        // Buffer 문제 해결해야함.
-                        char buf2[1024];
-                        memset(buf2, 0, sizeof(char) * 1024);
-                        int n = read(curr_event->ident, buf2, sizeof(buf));
-                        if (n > 0)
-                        {
-                            buf2[n] = '\0';
-                            clients[curr_event->ident] += buf2;
-
-                        }
-	                    std::cout << "------------------------ buf ------------------------" << std::endl;
-                        std::cout << clients[curr_event->ident] << std::endl;
-	                    std::cout << "------------------------ buf ------------------------" << std::endl;
-                        
-                        serverMap[clientsServerMap[curr_event->ident]].getRequestClass().parseRequestMessage(clients[curr_event->ident]);
-                        serverMap[clientsServerMap[curr_event->ident]].processMethod();
-                        // exit(0);
                     }
                 }
             }
@@ -255,11 +223,12 @@ void WebServer::monitorKqueue()
             {
                 if (clients.find(curr_event->ident)!= clients.end())
                 {
-                if (clients[curr_event->ident] != "")
+                std::string tmp = clients[curr_event->ident];
+                if (tmp.size() > 4 && tmp.substr(tmp.size()-4, 4) == "\r\n\r\n")
                     {
                     int n;
-                    // std::string ResponseMessage = serverMap[curr_event->ident].getResponseClass().writeResponseMessage();
-                    // std::string ResponseMessage = "HTTP/1.1 200 GOOD\r\nDate: a\r\nServer: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nContent-Length: 6\r\nConnection: close\r\nContent-Type: text/html\r\n\n<h1>My page</h1>";
+                    serverMap[clientsServerMap[curr_event->ident]].getRequestClass().parseRequestMessage(clients[curr_event->ident]);
+                    serverMap[clientsServerMap[curr_event->ident]].processMethod();
                     std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
 					                    
                     if ((n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size())) == -1)
@@ -269,6 +238,8 @@ void WebServer::monitorKqueue()
                     }
                     else
                         clients[curr_event->ident].clear();
+                        
+                    serverMap[clientsServerMap[curr_event->ident]].setStatus(READY);
                     // disconnect_client(curr_event->ident, clients);
                     }
                 }

@@ -24,6 +24,10 @@
 #define ADDED_INDEX 1
 #define ADD_INDEX_FAIL 0
 
+#define READY 0
+#define LISTENING 1
+#define DONE 2
+
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
@@ -43,11 +47,14 @@ class Server
 			
 			// test
 			int clientSocket;
+			int status;
 			
 		protected:
 			// std::map<std::vector<int>, std::string> errPage; // errCode , Page;
 			
 		public:
+		void setStatus(int stat){status = stat;}
+		int getStatus(){return (status);}
 			// Server();
 			
 			// test
