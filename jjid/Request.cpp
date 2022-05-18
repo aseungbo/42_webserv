@@ -112,9 +112,14 @@ void Request::parseRequestMessage(std::string requestMessage)
 		std::vector<std::string>::iterator iter = parseRequest.begin() + 1;
 		for (; (*iter) != "\r" && iter != parseRequest.end(); iter++)
 			header.getContent().insert(initRequestHeader(*iter));
+		if (requestMessage.size() >= requestMessage.find("\r\n\r\n") + 4)
+			body = requestMessage.substr(requestMessage.find("\r\n\r\n")+4);
 		
-		for (; iter != parseRequest.end(); iter++)
-			body += (*iter + "\n");
+		// for (; iter != parseRequest.end(); iter++)
+		// 	if (iter != parseRequest.end() -1 )
+		// 		body += (*iter + "\n");
+		// 	else
+		// 		body += (*iter);
 }
 
 t_StartLine Request::getStartLine()

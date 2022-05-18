@@ -115,11 +115,12 @@ void change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int
     change_list.push_back(temp_event);
 }
 
-void disconnect_client(int client_fd, std::map<int, std::string>& clients)
+void disconnect_client(int client_fd, std::map<int, std::string>& clients, std::map<int, int> &clientsServerMap)
 {
     std::cout << "client disconnected: " << client_fd << std::endl;
     close(client_fd);
     clients.erase(client_fd);
+    clientsServerMap.erase(client_fd);
 }
 
 void WebServer::monitorKqueue()
@@ -211,7 +212,9 @@ void WebServer::monitorKqueue()
                     {
                         if (n < 0)
                             printErr("client read error!");
-                        disconnect_client(curr_event->ident, clients);
+                        std::cout << "read:diconnetc call" <<std::endl;
+                        // serverMap[clientsServerMap[curr_event->ident]].setStatus(READY);
+                        disconnect_client(curr_event->ident, clients, clientsServerMap);
                     }
                     else
                     {
@@ -225,10 +228,8 @@ void WebServer::monitorKqueue()
                         else if (clients[curr_event->ident].find("\r\n\r\n") != std::string::npos)
                         {   
                             currSever.getRequestClass().parseRequestMessage(clients[curr_event->ident]);
-                            std::cout << "row[" << clients[curr_event->ident]<<"]"<<std::endl;
                             clients[curr_event->ident] = "";
                             currSever.setStatus(DONE);
-   
                         }
                     }
                 }
@@ -257,14 +258,17 @@ void WebServer::monitorKqueue()
                                 // std::cout << "body same if" <<std::endl;
                                 serverMap[clientsServerMap[curr_event->ident]].processMethod();
                                 std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
-                                                    
+                                std::cout << "write1" <<std::endl;
                                 if (write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
                                 {
                                     printErr("client write err");
-                                    disconnect_client(curr_event->ident, clients);
+                                    disconnect_client(curr_event->ident, clients, clientsServerMap);
                                 }
                                 else
+                                {
                                     clients[curr_event->ident].clear();
+                                    clientsServerMap.erase(curr_event->ident);
+                                }
                                 currSever.setStatus(READY);
                             }
                             //아무고토안함
@@ -275,18 +279,21 @@ void WebServer::monitorKqueue()
                             // std::cout << "not and header done" <<std::endl;
                             serverMap[clientsServerMap[curr_event->ident]].processMethod();
                             std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
-                                                
+                                          std::cout << "write2" <<std::endl;      
                             if ( write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
                             {
                                 printErr("client write err");
-                                disconnect_client(curr_event->ident, clients);
+                                disconnect_client(curr_event->ident, clients, clientsServerMap);
                             }
                             else
-                                clients[curr_event->ident].clear();
-                            currSever.setStatus(READY);
+                                {
+                                    clients[curr_event->ident].clear();
+                                    clientsServerMap.erase(curr_event->ident);
+                                }
+                                currSever.setStatus(READY);
                         }
-                        
                     }
+                    // currSever.setStatus(READY);
                 }
             }
         }
