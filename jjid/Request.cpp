@@ -18,6 +18,11 @@ std::vector<std::string> Request::splitRequestMessage(std::string str, char deli
     return result;
 }
 
+void Request::addBody(std::string str)
+{
+	body += str;
+}
+
 int Request::methodToNum(const std::string& str)
 {
 	if (str == "GET")
@@ -71,29 +76,45 @@ std::pair <std::string, std::string> Request::initRequestHeader(const std::strin
 	}
 	std::pair<std::string, std::string> temp;
 	temp.first = splitHeader[0];
-	temp.second = splitHeader[1];
-
-	// std::cout << "initRequestHeader : " << "[" << temp.first << " , "<< temp.second << "]" << std::endl;
+	temp.second = splitHeader[1].substr(1,splitHeader[1].size() - 1);//TODO:공백날리기 다시생각 하기~ 스페이스 여러개 또는 없이 왔을때
+	
+	std::cout << temp.first <<  temp.second << std::endl;
+	std::cout << "initRequestHeader : " << "[" << temp.first << " , "<< temp.second << "]" << std::endl;
 
 	return (temp);
 }
 
 
+void Request::clearRequest()
+{
+	extension.clear();
+	startline.http.clear();
+	startline.method = 0;
+	startline.path.clear();
+	body.clear();
+	cgi = 0;
+	header.getContent().clear();
+}
 void Request::parseRequestMessage(std::string requestMessage)
 {
-	if (requestMessage.c_str() == 0)
+	if (requestMessage.size() == 0)
 		return ;
+	clearRequest();
 	// std::cout << requestMessage << std::endl;
-	std::vector<std::string> parseRequest = splitRequestMessage(requestMessage, '\n');
-	
-	//맨마지막은 '\n'
-	initStartLine(parseRequest[0]);	
-	std::vector<std::string>::iterator iter = parseRequest.begin() + 1;
-	for (; (*iter) != "\r" && iter != parseRequest.end(); iter++)
-		header.getContent().insert(initRequestHeader(*iter));
-
-	for (; iter != parseRequest.end(); iter++)
-		body += (*iter + "\n");
+	// if (headerDone == false)
+	// {
+		std::vector<std::string> parseRequest = splitRequestMessage(requestMessage, '\n');
+		//맨마지막은 '\n'
+		if (parseRequest.size() > 0)
+			initStartLine(parseRequest[0]);	
+		else
+			return (printErr("no requset"));
+		std::vector<std::string>::iterator iter = parseRequest.begin() + 1;
+		for (; (*iter) != "\r" && iter != parseRequest.end(); iter++)
+			header.getContent().insert(initRequestHeader(*iter));
+		
+		for (; iter != parseRequest.end(); iter++)
+			body += (*iter + "\n");
 }
 
 t_StartLine Request::getStartLine()

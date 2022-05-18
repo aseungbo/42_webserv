@@ -25,8 +25,7 @@
 #define ADD_INDEX_FAIL 0
 
 #define READY 0
-#define LISTENING 1
-#define DONE 2
+#define DONE 1
 
 class Server 
 	{

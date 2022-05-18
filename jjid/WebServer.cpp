@@ -205,6 +205,7 @@ void WebServer::monitorKqueue()
                 {
                     // parse request
                     char buf[1024];
+                    memset(buf,0,1024);
                     int n = read(curr_event->ident, buf, sizeof(buf));
                     if (n <= 0)
                     {
@@ -216,6 +217,19 @@ void WebServer::monitorKqueue()
                     {
                         buf[n] = '\0';
                         clients[curr_event->ident] += buf;
+                        Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
+                        if (currSever.getStatus() == DONE)
+                        {
+                            currSever.getRequestClass().addBody(buf);
+                        }
+                        else if (clients[curr_event->ident].find("\r\n\r\n") != std::string::npos)
+                        {   
+                            currSever.getRequestClass().parseRequestMessage(clients[curr_event->ident]);
+                            std::cout << "row[" << clients[curr_event->ident]<<"]"<<std::endl;
+                            clients[curr_event->ident] = "";
+                            currSever.setStatus(DONE);
+   
+                        }
                     }
                 }
             }
@@ -223,24 +237,55 @@ void WebServer::monitorKqueue()
             {
                 if (clients.find(curr_event->ident)!= clients.end())
                 {
-                std::string tmp = clients[curr_event->ident];
-                if (tmp.size() > 4 && tmp.substr(tmp.size()-4, 4) == "\r\n\r\n")
+                    // std::cout << "find if" <<std::endl;
+                    static int a = 0;
+                    Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
+                    if (currSever.getStatus() == DONE)
                     {
-                    int n;
-                    serverMap[clientsServerMap[curr_event->ident]].getRequestClass().parseRequestMessage(clients[curr_event->ident]);
-                    serverMap[clientsServerMap[curr_event->ident]].processMethod();
-                    std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
-					                    
-                    if ((n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size())) == -1)
-                    {
-                        printErr("client write err");
-                        disconnect_client(curr_event->ident, clients);
-                    }
-                    else
-                        clients[curr_event->ident].clear();
+                        // std::cout << "done if" <<std::endl;
+                        // std::string tmp = clients[curr_event->ident];
+                        std::map <std::string, std::string>::iterator findIter = currSever.getRequestClass().getHeader().getContent().find("Content-Length");
                         
-                    serverMap[clientsServerMap[curr_event->ident]].setStatus(READY);
-                    // disconnect_client(curr_event->ident, clients);
+                        if (findIter != currSever.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
+                        {
+                            // std::cout << "length if" <<std::endl;
+                            // std::cout << findIter->second << std::endl;
+                            // std::cout << "bodysize:" << currSever.getRequestClass().getBody().size() << std::endl;
+                            
+                            if (std::atoi(findIter->second.c_str()) == currSever.getRequestClass().getBody().size())//바디사이즈까지 같을때
+                            {
+                                // std::cout << "body same if" <<std::endl;
+                                serverMap[clientsServerMap[curr_event->ident]].processMethod();
+                                std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
+                                                    
+                                if (write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
+                                {
+                                    printErr("client write err");
+                                    disconnect_client(curr_event->ident, clients);
+                                }
+                                else
+                                    clients[curr_event->ident].clear();
+                                currSever.setStatus(READY);
+                            }
+                            //아무고토안함
+                            // std::cout << "nothing" <<std::endl;
+                        }
+                        else//못찾았을때인데 헤더파싱은 끝나야함
+                        {
+                            // std::cout << "not and header done" <<std::endl;
+                            serverMap[clientsServerMap[curr_event->ident]].processMethod();
+                            std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
+                                                
+                            if ( write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
+                            {
+                                printErr("client write err");
+                                disconnect_client(curr_event->ident, clients);
+                            }
+                            else
+                                clients[curr_event->ident].clear();
+                            currSever.setStatus(READY);
+                        }
+                        
                     }
                 }
             }
@@ -248,58 +293,6 @@ void WebServer::monitorKqueue()
     }
     return ;
 }
-    
-	
-
-
-// void WebServer::monitorKqueue()
-// {
-// 	while(42)
-// 	{
-// 		for (std::map<int, Server>::iterator iter = this->serverMap.begin(); iter != this->serverMap.end(); iter++)
-// 		{
-// 			struct sockaddr_in clntAddr;
-// 			socklen_t clntAddrSize = sizeof(clntAddr);
-// 			int clientSocket;
-			
-// 			// std::cout << "first: " << iter->first << " second: " << iter->second.getPort() << std::endl;
-// 			if ((clientSocket = accept(iter->first, (struct sockaddr *)&clntAddr, &clntAddrSize)) != -1)
-// 			{
-// 				char buf[512];
-// 				std::string str;
-// 				int n;
-				
-// 				// n = read_data(clientSocket, buf, 1024);
-				
-// 				str.clear();
-// 				while (1)
-// 				{
-// 					if (read(clientSocket, &buf, sizeof(buf)) > 0)
-// 					{
-// 						str = buf;
-// 					while((n = read(clientSocket, &buf, sizeof(buf))) > 0)
-// 					{
-// 						str += buf;
-// 					}
-// 					}
-// 					// std::cout << n << std::endl;
-// 					// std::cout << "===========" << std::endl;
-// 					std::cout << "[" << buf << "]" << std::endl; 
-// 					std::cout << "{" << str << "}" << std::endl;
-// 					// std::cout << "===========" << std::endl;
-// 					break;
-// 				}
-// 				std::cout << "====== end ======" << std::endl;
-// 				std::cout << str << std::endl;
-// 				exit(0);
-// 			}
-// 			// std::cout << "Accept new client: " << clientSocket << std::endl;
-// 			fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-			
-// 		}	
-// 	}
-// }
-//->안의 기능은 따로 뺄예정
 
 int main (int ac, char **av)
 {

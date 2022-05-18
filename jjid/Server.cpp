@@ -371,46 +371,6 @@ void Server::getMethod(int isHead)
 	
 	
 }
-// void Server::getMethod(int isHead)
-// {
-// 	std::string path = this->currRequest.getStartLine().path;
-// 	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
-// 	Location currLocation = whereIsLocation(path, locations);//find or  map match 등 다른이름 추천받음
-// 	int pathType = checkPath(path);
-// 	// std::cout << path << std::endl;
-
-// 	// path = whereIsRoot(path,currLocation);
-// 	// pathType = checkPath(path);
-// 	std::cout << "switch path : " << path <<std::endl;
-	
-// 	// currLocation.getRoot() + "/" + this->currRequest.getStartLine().path;
-	
-// 	// 파일 디렉토리 링크 등으로 뱉어낼거임
-// 	//디렉토리 -> 인덱스파일 탐색
-// 	//파일 -> 파일 오픈 -> 오픈 리턴으로 실패확인가능 . ngx_de_access라는 엔진엑스 매크로함수 처럼 권한 체크할지는 추후판단
-// 	//링크는 어떻게 해야할까(링크타고 찾아간다 등) 일단 보류
-	
-// 	//설정한 인덱스가 디렉토리인 경우를 생각했을때 실제 탐색해볼 주소를 완성하기 위한 serchIndex(처리될 로케이션의 정보를 가지고 Path를 완성시킴)
-// 	// if (checkPath(path) == DIR)
-// 	switch (pathType)
-// 	{
-// 		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
-// 			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
-// 				return (setErrorResponse(403));
-// 			// break;// 브레이크 안걸면 밑에거 까지 실행해주는걸로 아는디 불안하면 그냥 opneFile호출하시오
-// 		case FILE ://해당파일찾아볼것 마찬가지로 없다면 403
-// 			openFile(path, isHead);
-// 			break;
-// 		case NOT ://404
-// 			return (setErrorResponse(404));
-// 			/* throw 404 error */
-// 			break;
-// 		default:
-// 			return (setErrorResponse(404));
-// 			break;
-// 	}
-
-// }
 
 void Server::postMethod()
 {
@@ -427,50 +387,45 @@ void Server::postMethod()
 	// int pathType = checkPath(path);
 	// Location currLocation = whereIsLocation(path, locations);
 	
-	return (setErrorResponse(405));
+	// return (setErrorResponse(405));
 	std::string path = this->currRequest.getStartLine().path;
-	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
 	Location currLocation = whereIsLocation(path);//find or  map match 등 다른이름 추천받음
+	aliasRoot(currLocation, path);
+	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
 	
 	int pathType = checkPath(path);
-	// std::cout << path << std::endl;
-
-	// path = whereIsRoot(path,currLocation);
-	// pathType = checkPath(path);
-	std::cout << "switch path : " << path <<std::endl;
-	
 	serchIndex(path, currLocation);
-	
-	// std::cout << path <<std::endl;
+
 	int fd;
-	
-	
+	std::cout << "post result:" << path << std::endl;
 	if (pathType == FILE || pathType == DIR)
 	{
 		std::cout << "file " << std::endl;
 		if ((fd = open(path.c_str(), O_WRONLY | O_APPEND | O_NONBLOCK, 0644)) == -1)
 			return (setErrorResponse(500));
-			// return ;//500
 	}
 	else if (pathType == NOT)
 	{
 		std::cout << "not " << std::endl;
+		std::string dirPath = path.substr(0, path.find_last_of("/"));
+		std::cout << dirPath << std::endl;
+		mkdir(dirPath.c_str(),0777);
 		if ((fd = open(path.c_str(), O_WRONLY | O_CREAT | O_NONBLOCK, 0644)) == -1)
 			return (setErrorResponse(500));
-			// return ;//500
 	}
 	else if (pathType == DIR)
 	{   
-	std::cout << "dir " << std::endl;
+		std::cout << "dir " << std::endl;
 		return (setErrorResponse(403));
-		// return ;//403;
 	}
 	currResponse.setStatusCode(201);
 	std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
-	if (currRequest.getBody().size() > 0)
+	if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
 		write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
 	else
-		{currResponse.setStatusCode(405);}
+		{
+			currResponse.setStatusCode(405);
+		}
 	close(fd);
 	
 }

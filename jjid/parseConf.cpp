@@ -250,7 +250,7 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             serv.setAllowMethod(keyValueMap.find("limit_except")->second);
         if (locations.size() != 0)
             serv.setLocation(locations);
-        
+        serv.setStatus(READY);
         // only for TEST
         // std::cout << "serv root: " << serv.getRoot() << std::endl;
         // std::cout << "serv name: " << serv.getHost()[0]<< std::endl;
