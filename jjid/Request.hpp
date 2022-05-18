@@ -22,6 +22,7 @@ class Request
 		bool cgi;//해당 요청(확장자 보고 판단 )이 cgi인지
 		
 	public:
+		void clearRequest();
 		std::vector<std::string> splitRequestMessage(std::string str, char delimiter);
 		void initStartLine(const std::string &str);
 		int methodToNum(const std::string& str);
@@ -31,6 +32,7 @@ class Request
 		t_StartLine getStartLine();
 		Header& getHeader();
 		std::string getBody();
+		void addBody(std::string str);
 
 		class StartLineErr : public std::exception
 		{

@@ -8,6 +8,9 @@
 #include <vector>
 #include <sstream>
 
+#include <filesystem>
+#include <stdio.h>
+
 //socket
 #include <sys/types.h>
 #include <sys/event.h>
