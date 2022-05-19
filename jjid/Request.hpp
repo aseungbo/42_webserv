@@ -32,6 +32,7 @@ class Request
 		t_StartLine getStartLine();
 		Header& getHeader();
 		std::string getBody();
+		void setBody(std::string str);
 		void addBody(std::string str);
 
 		class StartLineErr : public std::exception

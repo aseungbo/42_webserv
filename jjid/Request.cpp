@@ -23,6 +23,11 @@ void Request::addBody(std::string str)
 	body += str;
 }
 
+void Request::setBody(std::string str)
+{
+	body = str;
+}
+
 int Request::methodToNum(const std::string& str)
 {
 	if (str == "GET")
