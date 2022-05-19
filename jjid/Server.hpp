@@ -26,6 +26,10 @@
 
 #define READY 0
 #define DONE 1
+#define CHUNKED 2
+#define CHUNKED_ALIVE 3
+#define CHUNKED_DONE 4
+#define CHUNKED_FIN 5
 
 class Server 
 	{
@@ -47,6 +51,8 @@ class Server
 			// test
 			int clientSocket;
 			int status;
+			int chunkedSize;
+			int currChunkedSize;
 			
 		protected:
 			// std::map<std::vector<int>, std::string> errPage; // errCode , Page;
@@ -54,6 +60,10 @@ class Server
 		public:
 		void setStatus(int stat){status = stat;}
 		int getStatus(){return (status);}
+		void setChunkedSize(int size){chunkedSize = size;}
+		int getChunkedSize(){return (chunkedSize);}
+		void setCurrChunkedSize(int size){currChunkedSize = size;}
+		int getCurrChunkedSize(){return (currChunkedSize);}
 			// Server();
 			
 			// test

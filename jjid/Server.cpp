@@ -420,10 +420,12 @@ void Server::postMethod()
 	}
 	currResponse.setStatusCode(201);
 	std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
-	if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
+	// if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
+	if (currRequest.getBody().size() != 0)
 		write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
 	else
 		{
+			std::cout << " 504:::"<<std::endl;
 			currResponse.setStatusCode(405);
 		}
 	close(fd);
