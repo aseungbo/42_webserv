@@ -142,6 +142,11 @@ std::string Request::getBody()
 	return (body);
 }
 
+std::string Request::getExtension()
+{
+	return (extension);
+}
+
 //static 변수는 class 끼리 공유하는 변수니까
 // init함수로 초기화를 하는 느낌으로 해야될듯
 // 생성자에서 해버리면 다른 친구들도 해주어야 하는데 문제가 상당히 생길 듯

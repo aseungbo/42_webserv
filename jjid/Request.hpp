@@ -32,9 +32,10 @@ class Request
 		t_StartLine getStartLine();
 		Header& getHeader();
 		std::string getBody();
-		void setBody(std::string str);
-		void addBody(std::string str);
+		std::string getExtension();
 
+		void addBody(std::string str);
+		void setBody(std::string str);
 		class StartLineErr : public std::exception
 		{
 			const char *what() const throw ()

@@ -26,6 +26,15 @@ std::vector<std::string> Location::getAllowMethod()
  return (AllowMethod);
 }
 
+int Location::getLocationType()
+{
+	return (locationType);
+}
+
+std::string Location::getExtension()
+{
+	return (extension);
+}
 // // bool getAutoIndex()
 // {
 //  return (AutoIndex);
@@ -54,5 +63,15 @@ void Location::setErrPage(std::map<std::vector<int>, std::string> errPage)
 void Location::setAllowMethod(std::vector<std::string> AllowMethod)
 {
 	this->AllowMethod = AllowMethod;
+}
+
+void Location::setLocationType(int type)
+{
+	this->locationType = type;
+}
+
+void Location::setExtension(std::string extension)
+{
+	this->extension = extension;
 }
 

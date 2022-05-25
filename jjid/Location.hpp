@@ -13,7 +13,8 @@ class Location
 			std::map<std::vector<int>, std::string> errPage;
 			std::vector<std::string> AllowMethod;
 			// bool autoIndex;
-			
+			int locationType;
+			std::string extension;
 			
 		public:
 			std::string getRoot();
@@ -21,6 +22,8 @@ class Location
 			std::vector<std::string> getIndex();
 			std::map<std::vector<int>, std::string> getErrPage();
 			std::vector<std::string> getAllowMethod();
+			int getLocationType();
+			std::string getExtension();
 			// bool getAutoIndex();
 
 			void setRoot(std::string root);
@@ -28,7 +31,8 @@ class Location
 			void setIndex(std::vector<std::string> index);
 			void setErrPage(std::map<std::vector<int>, std::string> errPage);
 			void setAllowMethod(std::vector<std::string> AllowMethod);
-			
+			void setLocationType(int type);
+			void setExtension(std::string extension);
 			
 	};
 

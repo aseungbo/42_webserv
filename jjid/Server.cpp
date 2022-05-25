@@ -103,28 +103,40 @@ void Server::processMethod()
 	this->currResponse.setBody("");
 	this->currResponse.setStatusCode(0);
 	// this->currResponse.setHeader(0);
-	switch (currRequest.getStartLine().method)
-	{
-		case GET:
-			getMethod(NO_HEAD);
-			break;
-		case HEAD:
-			getMethod(YES_HEAD);
-			break;
-		case POST:
-			postMethod();
-			break;
-		case -1:
-			postMethod();
-			break;
-		case DELETE:
-			deleteMethod();
-			break;
-		default:
-			return (setErrorResponse(405));
-			//405와 같은 에러코드 처리
-			break;
-	}
+	// std::string path = this->currRequest.getStartLine().path;
+	// Location currLocation = whereIsLocation(path);
+	// aliasRoot(currLocation, path);
+
+	// if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL)
+	// {
+		switch (currRequest.getStartLine().method)
+		{
+			case GET:
+				getMethod(NO_HEAD);
+				break;
+			case HEAD:
+				getMethod(YES_HEAD);
+				break;
+			case POST:
+				postMethod();
+				break;
+			case -1:
+				postMethod();
+				break;
+			case DELETE:
+				deleteMethod();
+				break;
+			default:
+				return (setErrorResponse(405));
+				//405와 같은 에러코드 처리
+				break;
+		}
+	// }
+	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_CGI)
+	// 	// cgi
+	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
+	// 	// redir
+
 }
 
 int checkPath(std::string &path)

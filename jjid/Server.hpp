@@ -31,6 +31,11 @@
 #define CHUNKED_DONE 4
 #define CHUNKED_FIN 5
 
+#define LOCATIONTYPE_NORMAL 0
+#define LOCATIONTYPE_CGI 1
+#define LOCATIONTYPE_REDIR 2
+
+
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};

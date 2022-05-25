@@ -113,9 +113,24 @@ void    Parser::parseLocPath(std::string currLine)
     std::string temp = currLine;
     std::string key = "path";
     std::vector<std::string> path;
-    int start = temp.find("/");
-    int end = temp.find(" ", start);
+    std::vector<std::string> extension;
 
+    int start;
+    int end;
+    int extensionPos = temp.find("*.");
+    if (extensionPos != std::string::npos)
+    {
+        start = temp.find("/");
+        end = extensionPos;
+        int extensionEnd = temp.find(" ", extensionPos);
+        extension.push_back(temp.substr(extensionPos + 2, (extensionEnd - (extensionPos + 2))));
+        locMap.insert(std::pair<std::string, std::vector<std::string> >("extension", extension));
+    }
+    else
+    {
+        start = temp.find("/");
+        end = temp.find(" ", start);
+    }
     path.push_back(temp.substr(start, end - start));
     if (locMap.find(key) == locMap.end())
         locMap.insert(std::pair<std::string, std::vector<std::string> >(key, path));
@@ -151,6 +166,8 @@ Location Parser::initLocation()
 {
     Location loc;
 
+    if (locMap.find("extension") != locMap.end())
+        loc.setExtension(locMap.find("extension")->second[0]);
     if (locMap.find("path") != locMap.end())
         loc.setPath(locMap.find("path")->second[0]);
     if (locMap.find("root") != locMap.end())
