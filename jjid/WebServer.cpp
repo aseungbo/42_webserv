@@ -387,11 +387,11 @@ void WebServer::monitorKqueue()
                                 disconnect_client(curr_event->ident, clients, clientsServerMap);
                             }
                             else
-                                {
-                                    clients[curr_event->ident].clear();
-                                    clientsServerMap.erase(curr_event->ident);
-                                }
-                                currSever.setStatus(READY);
+                            {
+                                clients[curr_event->ident].clear();
+                                clientsServerMap.erase(curr_event->ident);
+                            }
+                            currSever.setStatus(READY);
                         }
                     }
                     else if (currSever.getStatus() == CHUNKED_FIN)

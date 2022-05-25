@@ -15,6 +15,7 @@ class Location
 			// bool autoIndex;
 			int locationType;
 			std::string extension;
+			std::string cgiPath;
 			
 		public:
 			std::string getRoot();
@@ -24,6 +25,7 @@ class Location
 			std::vector<std::string> getAllowMethod();
 			int getLocationType();
 			std::string getExtension();
+			std::string getCgiPath();
 			// bool getAutoIndex();
 
 			void setRoot(std::string root);
@@ -33,7 +35,7 @@ class Location
 			void setAllowMethod(std::vector<std::string> AllowMethod);
 			void setLocationType(int type);
 			void setExtension(std::string extension);
-			
+			void setCgiPath(std::string cgiPath);
 	};
 
 #endif

@@ -1,5 +1,6 @@
 #include "Server.hpp"
-
+void aliasRoot(Location currLocation, std::string &path);
+int checkPath(std::string &path);
 void Server::setRoot(std::string root)
 {
 	this->root = root;
@@ -95,6 +96,21 @@ void Server::setErrorResponse(int statusCode)
 	this->currResponse.setStatusCode(statusCode);
 }
 
+char  **makeEnvp(const char *str)
+{
+	char *test = "REQUEST_METHOD=POST";
+	char **test2 = new char*[5];
+	test2[0] = test;
+	test = "SERVER_PROTOCOL=HTTP/1.1";
+	test2[1] = test;
+	test = "PATH_INFO=/Users/hyopark/b2c/webserv/0525/jjid/YoupiBanane/youpi.bla" ;
+	test2[2] = test;
+	test = "CONTENT_LENGTH=5" ;
+	test2[3] = test;
+	test2[4] = NULL;
+	
+	return (test2);
+}
 void Server::processMethod()
 {
 	//allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
@@ -103,12 +119,14 @@ void Server::processMethod()
 	this->currResponse.setBody("");
 	this->currResponse.setStatusCode(0);
 	// this->currResponse.setHeader(0);
-	// std::string path = this->currRequest.getStartLine().path;
-	// Location currLocation = whereIsLocation(path);
-	// aliasRoot(currLocation, path);
+	std::string path = this->currRequest.getStartLine().path;
+	Location currLocation = whereIsLocation(path);
+	aliasRoot(currLocation, path);
+	checkPath(path);
+	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
 
-	// if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL)
-	// {
+	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL)
+	{
 		switch (currRequest.getStartLine().method)
 		{
 			case GET:
@@ -131,11 +149,72 @@ void Server::processMethod()
 				//405와 같은 에러코드 처리
 				break;
 		}
-	// }
-	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_CGI)
-	// 	// cgi
+	}
+	else if (currLocation.getLocationType() ==  LOCATIONTYPE_CGI)
+	{
+		int readFd[2];
+		int writeFd[2];
+		int sysFd[2];
+		pid_t pid;
+		char buf[1024];
+		
+		// dup2(sysFd[1],1);
+		sysFd[0] = 0;
+		sysFd[1] = 1;
+		pipe(readFd);
+		pipe(writeFd);
+		pid = fork();
+		if (pid == 0)
+		{
+			// dup2(fd[0],0);
+			// close(fd[0]);
+			// std::cout << "cgi path :: "<< currLocation.getCgiPath() <<std::endl;
+			// std::cout << "path :: "<< path <<std::endl;
+			// std::cout << "env :: "<< makeEnvp("./YoupiBanane/youpi.bla")[1] <<std::endl;
+			dup2(readFd[1],1);
+			close(readFd[0]);
+			// close(readFd[1]);
+			dup2(writeFd[0],0);
+			// close(writeFd[0]);
+			close(writeFd[1]);
+			char *test[2] ;
+			test[0] = (char *)currLocation.getCgiPath().c_str();
+			test[1] = NULL;
+			// dprintf(2,"dprintf:\n");
+			// dprintf(2,"dprintf: %d\n",execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str())));
+			execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str()));
+			char buf[1024];
+			
+			int n = read(writeFd[0],buf,1024);
+			write(readFd[1],buf,n);
+			// write(writeFd[0],"a\r\n\r\n",5);
+			// write(readFd[1],"a\r\n\t\n",5);
+			// std::cout << "execle end"<<std::endl;
+			exit(1);
+		}
+		else
+		{
+			close(writeFd[0]);
+			close(readFd[1]);
+			write(writeFd[1],"a\r\n\r\n",5);
+			waitpid(pid,NULL,0);
+			// kq
+			// kq
+			// read(readFd[0],difj)
+			int n = read(readFd[0], buf, 1024);
+			buf[n] = '\0';
+			std::cout << "execl buf: " << buf <<std::endl;
+			std::cout << "n: " << n <<std::endl;
+			// readFd[1] = sysFd[1];
+			// parseCgi();
+		}
+		
+		// cgi
+	}
 	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
+	// {
 	// 	// redir
+	// }
 
 }
 
@@ -193,7 +272,10 @@ Location Server::whereIsLocation(std::string const & path)
 		}
 		if (path.find(findPath) == 0)
 		{
-			return (locationVector[idx]);
+			if (locationVector[idx].getExtension().empty())
+				return (locationVector[idx]);
+			else if (locationVector[idx].getExtension() == currRequest.getExtension())
+				return (locationVector[idx]);
 		}
 	}
 	

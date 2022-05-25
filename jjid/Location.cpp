@@ -40,6 +40,11 @@ std::string Location::getExtension()
 //  return (AutoIndex);
 // }
 
+std::string Location::getCgiPath()
+{
+	return (cgiPath);
+}
+
 void Location::setRoot(std::string root)
 {
 	this->root = root;
@@ -75,3 +80,7 @@ void Location::setExtension(std::string extension)
 	this->extension = extension;
 }
 
+void Location::setCgiPath(std::string cgiPath)
+{
+	this->cgiPath = cgiPath;
+}

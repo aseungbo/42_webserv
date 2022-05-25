@@ -168,6 +168,11 @@ Location Parser::initLocation()
 
     if (locMap.find("extension") != locMap.end())
         loc.setExtension(locMap.find("extension")->second[0]);
+    if (locMap.find("cgi") != locMap.end())
+    {
+        loc.setLocationType(LOCATIONTYPE_CGI);
+        loc.setCgiPath(locMap.find("cgi")->second[0]);
+    }
     if (locMap.find("path") != locMap.end())
         loc.setPath(locMap.find("path")->second[0]);
     if (locMap.find("root") != locMap.end())
