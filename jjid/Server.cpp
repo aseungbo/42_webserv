@@ -1,6 +1,66 @@
 #include "Server.hpp"
+
 void aliasRoot(Location currLocation, std::string &path);
 int checkPath(std::string &path);
+
+void Server::setServerFd(int fd)
+{
+	serverFd = fd;
+}
+int Server::getServerFd()
+{
+	return (serverFd);
+}
+
+// int *Server::getCgiWriteFd()
+// {
+// 	return (cgiWriteFd);
+// }
+// int *Server::getCgiReadFd()
+// {
+// 	return (cgiReadFd);
+// }
+
+// std::string Server::getCgiBody()
+// {
+// 	return (cgiBody);
+// }
+// char Server::**getEnvp()
+// {
+// 	return (envp);
+// }
+
+// void Server::setCgiWriteFd(int cgiWriteFd[2])
+// {
+// 	this->cgiWriteFd = cgiWriteFd;
+// }
+// void Server::setCgiReadFd(int cgiReadFd[2])
+// {
+// 	this->cgiReadFd = cgiReadFd;
+// }
+// void Server::setCgiBody(std::string str)
+// {
+// 	this->cgiBody = str;
+// }
+// void Server::setEnvp(char **envp)
+// {
+// 	this->envp = envp;
+// }
+
+Location Server::getCurrLocation()
+{
+	return (this->currLocation);
+}
+
+
+void change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
+{
+    struct kevent temp_event;
+
+    EV_SET(&temp_event, ident, filter, flags, fflags, data, udata);
+    change_list.push_back(temp_event);
+}
+
 void Server::setRoot(std::string root)
 {
 	this->root = root;
@@ -95,6 +155,21 @@ void Server::setErrorResponse(int statusCode)
 {
 	this->currResponse.setStatusCode(statusCode);
 }
+void Server::linkFdManager(std::map<int, int> &fdManager)
+{
+	this->fdManager = &fdManager;
+}
+
+void Server::linkChangeList(std::vector <struct kevent> &changeList)
+{
+	this->changeList = &changeList;
+}
+
+void Server::setFdManager(int fd, int serverFd)
+{
+	fdManager->insert(std::pair<int, int>(fd,serverFd));
+}
+
 
 char  **makeEnvp(const char *str)
 {
@@ -111,18 +186,50 @@ char  **makeEnvp(const char *str)
 	
 	return (test2);
 }
-void Server::processMethod()
+
+// void Server::setCgiEvent(std::vector <struct kevent> &change_list)
+// {
+// 	envp = makeEnvp();
+// 	pipe(cgiWriteFd);
+// 	pipe(cgiReadFd);
+// 	change_events(change_list, writeFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+// 	change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+// 	change_events(change_list, readFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+// 	change_events(change_list, readFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+// }
+
+void Server::preProcess()
 {
-	//allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
+    //allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
 	//isAllowMethod();
 	//405ls
 	this->currResponse.setBody("");
 	this->currResponse.setStatusCode(0);
 	// this->currResponse.setHeader(0);
-	std::string path = this->currRequest.getStartLine().path;
-	Location currLocation = whereIsLocation(path);
-	aliasRoot(currLocation, path);
-	checkPath(path);
+	std::string pathTmp = currRequest.getStartLine().path;
+	Location currLocation = whereIsLocation(pathTmp);
+	aliasRoot(currLocation, pathTmp);
+	checkPath(pathTmp);
+	currRequest.getStartLine().path = pathTmp;
+}
+
+// int Server::checkMethod()
+// {
+	
+// }
+
+void Server::processMethod(std::vector <struct kevent> &change_list)
+{
+	//allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
+	//isAllowMethod();
+	//405ls
+	// this->currResponse.setBody("");
+	// this->currResponse.setStatusCode(0);
+	// // this->currResponse.setHeader(0);
+	// std::string path = this->currRequest.getStartLine().path;
+	// this->currLocation = whereIsLocation(path);
+	// aliasRoot(currLocation, path);
+	// checkPath(path);
 	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
 
 	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL)
@@ -182,7 +289,7 @@ void Server::processMethod()
 			test[1] = NULL;
 			// dprintf(2,"dprintf:\n");
 			// dprintf(2,"dprintf: %d\n",execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str())));
-			execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str()));
+			// execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str()));
 			char buf[1024];
 			
 			int n = read(writeFd[0],buf,1024);
@@ -196,9 +303,11 @@ void Server::processMethod()
 		{
 			close(writeFd[0]);
 			close(readFd[1]);
-			write(writeFd[1],"a\r\n\r\n",5);
-			waitpid(pid,NULL,0);
 			// kq
+            change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+			write(writeFd[1],"a\r\n\r\n",5);
+			//serverinfo, fd, body?, 
+			change_events(change_list, readFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 			// kq
 			// read(readFd[0],difj)
 			int n = read(readFd[0], buf, 1024);
@@ -207,6 +316,7 @@ void Server::processMethod()
 			std::cout << "n: " << n <<std::endl;
 			// readFd[1] = sysFd[1];
 			// parseCgi();
+			waitpid(pid,NULL,0);
 		}
 		
 		// cgi
@@ -233,7 +343,7 @@ int checkPath(std::string &path)
 		return DIR;
 	}
 	else if (S_ISREG(buf.st_mode))
-		return FILE;
+		return _FILE;
 	// else if (S_ISLNK())
 	// 	return LINK;
 	else
@@ -371,46 +481,97 @@ int Server::serchIndex(std::string &path, Location currLocation)
 	return (ADD_INDEX_FAIL);
 }
 
+void Server::readFile(int fd)
+{	
+	char buf[1024];
+	int n = read(fd, buf,1024);
+	buf[n] = '\0';
+	
+	// std::ifstream in(fdopen(fd, "r"));
+	// std::string body;
+	
+	// if (in.is_open())
+	// {
+	// 	// 위치 지정자를 파일 끝으로 옮긴다.
+	// 	in.seekg(0, std::ios::end);
+	// 	// 그리고 그 위치를 읽는다. (파일의 크기)
+	// 	int size = in.tellg();
+	// 	// 그 크기의 문자열을 할당한다.
+	// 	body.resize(size);
+	// 	// 위치 지정자를 다시 파일 맨 앞으로 옮긴다.
+	// 	in.seekg(0, std::ios::beg);
+	// 	// 파일 전체 내용을 읽어서 문자열에 저장한다.
+	// 	in.read(&body[0], size);
+	// 	// std::cout << body << std::endl;
+	// }
+	this->currResponse.setStatusCode(200);
+	this->currResponse.setBody(buf);
+	std::cout << "readFile :: " << buf << std::endl; 
+	close(fd);
+	// std::fclose(in);
+	// close(fd);
+}
+
 void Server::openFile(std::string path, int isHead)
-{
-	std::cout << "\nopen call \n "<< path<<std::endl;
-	// 파일 읽기 준비
-	std::ifstream in(path);
-	std::string body;
-	if (in.is_open()) {
+{		
+	int	fd = open(path.c_str(), O_RDONLY);
+	
+	if (fd != -1)
+	{
 		if (isHead == NO_HEAD)
 		{
-			// 위치 지정자를 파일 끝으로 옮긴다.
-			in.seekg(0, std::ios::end);
-			// 그리고 그 위치를 읽는다. (파일의 크기)
-			int size = in.tellg();
-			// 그 크기의 문자열을 할당한다.
-			body.resize(size);
-			// 위치 지정자를 다시 파일 맨 앞으로 옮긴다.
-			in.seekg(0, std::ios::beg);
-			// 파일 전체 내용을 읽어서 문자열에 저장한다.
-			in.read(&body[0], size);
-			
-			// std::cout << body << std::endl;
+			setFdManager(fd, getServerFd());
+			change_events(*changeList, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0,0,NULL);
 		}
 	}
-	else {
-		std::cout << path +  " " << "파일을 찾을 수 없습니다!" << std::endl;
-		in.close();
-		// throw (404);//catch해서 set다 호출할것 TODO
-		return (setErrorResponse(404));
-		// return;
-	}
-	if (isHead == NO_HEAD)
-		this->currResponse.setStatusCode(200);
 	else
+	{
+		close(fd);
+		return (setErrorResponse(404));
+	}
+	if (isHead == YES_HEAD)
+	{
 		this->currResponse.setStatusCode(405);
-	this->currResponse.setBody(body);
+		close(fd);
+	}
+	// std::cout << "\nopen call \n "<< path<<std::endl;
+	// // 파일 읽기 준비
+	// std::ifstream in(path);
 	
-	std::cout << "whereis test::::\n";
-	std::cout << "test:::: " << currResponse.writeResponseMessage()<<std::endl;
-	in.close();
-	return ;
+	// std::string body;
+	// if (in.is_open()) {
+	// 	if (isHead == NO_HEAD)
+	// 	{
+	// 		// 위치 지정자를 파일 끝으로 옮긴다.
+	// 		in.seekg(0, std::ios::end);
+	// 		// 그리고 그 위치를 읽는다. (파일의 크기)
+	// 		int size = in.tellg();
+	// 		// 그 크기의 문자열을 할당한다.
+	// 		body.resize(size);
+	// 		// 위치 지정자를 다시 파일 맨 앞으로 옮긴다.
+	// 		in.seekg(0, std::ios::beg);
+	// 		// 파일 전체 내용을 읽어서 문자열에 저장한다.
+	// 		in.read(&body[0], size);
+	// 		// std::cout << body << std::endl;
+	// 	}
+	// }
+	// else {
+	// 	std::cout << path +  " " << "파일을 찾을 수 없습니다!" << std::endl;
+	// 	in.close();
+	// 	// throw (404);//catch해서 set다 호출할것 TODO
+	// 	return (setErrorResponse(404));
+	// 	// return;
+	// }
+	// if (isHead == NO_HEAD)
+	// 	this->currResponse.setStatusCode(200);
+	// else
+	// 	this->currResponse.setStatusCode(405);
+	// this->currResponse.setBody(body);
+	
+	// std::cout << "whereis test::::\n";
+	// std::cout << "test:::: " << currResponse.writeResponseMessage()<<std::endl;
+	// in.close();
+	// return ;
 }
 
 std::string whereIsRoot(std::string path, Location currLocation)
@@ -451,7 +612,7 @@ void Server::getMethod(int isHead)
 		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
 			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
 				return ;
-		case FILE ://해당파일찾아볼것 마찬가지로 없다면 403
+		case _FILE ://해당파일찾아볼것 마찬가지로 없다면 403	
 			openFile(path, isHead);
 			break;
 		case NOT ://404
@@ -492,7 +653,7 @@ void Server::postMethod()
 
 	int fd;
 	std::cout << "post result:" << path << std::endl;
-	if (pathType == FILE || pathType == DIR)
+	if (pathType == _FILE || pathType == DIR)
 	{
 		std::cout << "file " << std::endl;
 		if ((fd = open(path.c_str(), O_WRONLY | O_APPEND | O_NONBLOCK, 0644)) == -1)

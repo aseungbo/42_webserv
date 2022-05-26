@@ -1,17 +1,18 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-// # include "uniHeader.hpp"
+# include "uniHeader.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
 
 #include <sys/stat.h>
 #include <cstdio>
+#include <fcntl.h>
 #include "Location.hpp"
 
 #define NOT 0
 #define DIR 1
-#define FILE 2
+#define _FILE 2
 
 // #define DEFAULT_INDEX "index.html"
 #define DEFAULT_INDEX "youpi.bad_extension"
@@ -35,11 +36,13 @@
 #define LOCATIONTYPE_CGI 1
 #define LOCATIONTYPE_REDIR 2
 
-
+void change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
+        uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
 		private:
+			
 			std::vector<std::string> hosts;//Host 클래스로 만들어서 호스트정보는 저장하고 메서드로 아이피 주소 퉤 하는 거 만들고싶다 
 			int port;
 			int clientBodySize;//이거 리퀘스트냐?? 리스폰스냐? 나중에 찌가 알아오기
@@ -53,11 +56,22 @@ class Server
 			Request currRequest;
 			Response currResponse;//구조적으로 맘에 안듦 (jji, 29, 무직)
 			
+			int cgiWriteFd[2];
+			int cgiReadFd[2];
+			std::string cgiBody;
+			char **envp;
+			
 			// test
 			int clientSocket;
 			int status;
 			int chunkedSize;
 			int currChunkedSize;
+			Location currLocation;
+			
+			std::map<int, int> *fdManager;
+			int serverFd;
+			bool fdFlag;//resource or cgi
+			std::vector <struct kevent> *changeList;
 			
 		protected:
 			// std::map<std::vector<int>, std::string> errPage; // errCode , Page;
@@ -97,7 +111,7 @@ class Server
 			Request& getRequestClass();
 			Response& getResponseClass();
 			
-			void processMethod();
+			void processMethod(std::vector <struct kevent> &change_list);
 			// Request Method
 			void getMethod(int isHead);
 			void postMethod();
@@ -115,6 +129,29 @@ class Server
 			
 			void setErrorResponse(int statusCode);
 			
+			// int *getCgiWriteFd();
+			// int *getCgiReadFd();
+			// std::string getCgiBody();
+			// char **getEnvp();
+			
+			// void setCgiWriteFd(int cgiWriteFd[2]);
+			// void setCgiReadFd(int cgiReadFd[2]);
+			// void setCgiBody(std::string str);
+			// void setEnvp(char **envp);
+			
+			
+			
+			void preProcess();
+			int checkMethod();
+			Location getCurrLocation();
+			void setCgiEvent(std::vector <struct kevent> &change_list);
+			void linkFdManager(std::map<int, int> &FdManager);
+			void setFdManager(int fd, int serverFd);
+			// void Server::setCgiReadEvent(std::vector <struct kevent> &change_list);
+			void setServerFd(int fd);
+			int getServerFd();
+			void linkChangeList(std::vector <struct kevent> &changeList);
+			void readFile(int fd);
 	};
 
 
