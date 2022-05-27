@@ -344,7 +344,7 @@ void WebServer::monitorKqueue()
                     else if (currSever.getStatus() == CHUNKED_FIN)
                     {
                         serverMap[clientsServerMap[curr_event->ident]].preProcess();
-                        serverMap[clientsServerMap[curr_event->ident]].processMethod(change_list);    
+                        serverMap[clientsServerMap[curr_event->ident]].processMethod(change_list);
                         currSever.setStatus(READY);
                         // }
                     }
@@ -362,6 +362,7 @@ void WebServer::monitorKqueue()
                             clients[curr_event->ident].clear();
                             clientsServerMap.erase(curr_event->ident);
                         }
+                        //지우기 Server : curr들 초기화 initServerCurrResponseAndRequestAndLocation
                     }
                 }
             }

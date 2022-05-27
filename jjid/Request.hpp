@@ -36,6 +36,10 @@ class Request
 
 		void addBody(std::string str);
 		void setBody(std::string str);
+		void setPath(std::string str)
+		{
+			startline.path = str;
+		}
 		class StartLineErr : public std::exception
 		{
 			const char *what() const throw ()
