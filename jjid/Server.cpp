@@ -12,6 +12,26 @@ int Server::getServerFd()
 	return (serverFd);
 }
 
+int *Server::getReadFd()
+{
+	return (readFd);
+}
+int *Server::getWriteFd()
+{
+	return (writeFd);
+}
+	
+void Server::setReadFd()
+{
+	pipe(readFd);
+}
+
+void Server::setWriteFd()
+{
+	pipe(writeFd);
+}
+
+
 // int *Server::getCgiWriteFd()
 // {
 // 	return (cgiWriteFd);
@@ -235,8 +255,8 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 	// checkPath(path);
 	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
 
-	// if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL)
-	// {
+	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL)
+	{
 		switch (currRequest.getStartLine().method)
 		{
 			case GET:
@@ -260,76 +280,23 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 				break;
 		}
 	}
-	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_CGI)
-	// {
-	// 	int readFd[2];
-	// 	int writeFd[2];
-	// 	int sysFd[2];
-	// 	pid_t pid;
-	// 	char buf[1024];
+	else if (currLocation.getLocationType() ==  LOCATIONTYPE_CGI)
+	{		
+		setReadFd();
+		setWriteFd();
 		
-	// 	// dup2(sysFd[1],1);
-	// 	sysFd[0] = 0;
-	// 	sysFd[1] = 1;
-	// 	pipe(readFd);
-	// 	pipe(writeFd);
-	// 	pid = fork();
-	// 	if (pid == 0)
-	// 	{
-	// 		// dup2(fd[0],0);
-	// 		// close(fd[0]);
-	// 		// std::cout << "cgi path :: "<< currLocation.getCgiPath() <<std::endl;
-	// 		// std::cout << "path :: "<< path <<std::endl;
-	// 		// std::cout << "env :: "<< makeEnvp("./YoupiBanane/youpi.bla")[1] <<std::endl;
-	// 		dup2(readFd[1],1);
-	// 		close(readFd[0]);
-	// 		// close(readFd[1]);
-	// 		dup2(writeFd[0],0);
-	// 		// close(writeFd[0]);
-	// 		close(writeFd[1]);
-	// 		char *test[2] ;
-	// 		test[0] = (char *)currLocation.getCgiPath().c_str();
-	// 		test[1] = NULL;
-	// 		// dprintf(2,"dprintf:\n");
-	// 		// dprintf(2,"dprintf: %d\n",execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str())));
-	// 		// execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str()));
-	// 		char buf[1024];
-			
-	// 		int n = read(writeFd[0],buf,1024);
-	// 		write(readFd[1],buf,n);
-	// 		// write(writeFd[0],"a\r\n\r\n",5);
-	// 		// write(readFd[1],"a\r\n\t\n",5);
-	// 		// std::cout << "execle end"<<std::endl;
-	// 		exit(1);
-	// 	}
-	// 	else
-	// 	{
-	// 		close(writeFd[0]);
-	// 		close(readFd[1]);
-	// 		// kq
-    //         change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	// 		write(writeFd[1],"a\r\n\r\n",5);
-	// 		//serverinfo, fd, body?, 
-	// 		change_events(change_list, readFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	// 		// kq
-	// 		// read(readFd[0],difj)
-	// 		int n = read(readFd[0], buf, 1024);
-	// 		buf[n] = '\0';
-	// 		std::cout << "execl buf: " << buf <<std::endl;
-	// 		std::cout << "n: " << n <<std::endl;
-	// 		// readFd[1] = sysFd[1];
-	// 		// parseCgi();
-	// 		waitpid(pid,NULL,0);
-	// 	}
-		
-		// cgi
-	// }
+		setFdManager(writeFd[1], getServerFd());
+		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		// setFdManager(readFd[0], getServerFd());
+		// change_events(change_list, readFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		return ;
+	}
 	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
 	// {
 	// 	// redir
 	// }
 
-// }
+}
 
 int checkPath(std::string &path)
 {

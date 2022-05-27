@@ -164,12 +164,70 @@ void WebServer::monitorKqueue()
             }
             else if (curr_event->filter == EVFILT_READ)
             {
+                std::cout << "read evnet \n";
                 // map indexing으로 접근 가능한지 확인해볼 것
                 //TODO : 어떤서버에 연결할지 함수로 만들었으면 좋겠다.
                 std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    serverMap[fdManager[curr_event->ident]].readFile(curr_event->ident);
+                    std::cout << "fdmannngegrr find  \n";
+                    Server &currServer = serverMap[fdManager[curr_event->ident]];
+                    if (currServer.getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
+                        currServer.readFile(curr_event->ident);//일반 get 메소드 
+                    else
+                        {
+                            std::cout << "fokrkrkrkrkrkrkkk  \n";
+                            exit(1);
+                            //read
+                            pid_t pid;
+                            std::string body;
+                            int n;
+                            char buf[1024];
+                            pid = fork();
+                            if (pid == 0)
+                            {
+                                dup2(currServer.getReadFd()[1],1);
+                                close(currServer.getReadFd()[0]);
+                                // close(readFd[1]);
+                                dup2(currServer.getWriteFd()[0],0);
+                                // close(writeFd[0]);
+                                close(currServer.getWriteFd()[1]);
+                                
+                                while ((n = read(currServer.getWriteFd()[0], buf,1024)) > 0)
+                                {
+                                    buf[n] = '\0';
+                                    body += buf;
+                                    memset(buf, 0, 1024);
+                                }
+                                std::cout << "child booooooooooody~! : " << body <<std::endl;
+                                write(currServer.getReadFd()[1], body.c_str(), body.size());
+                                // char *test[2] ;
+                                // test[0] = (char *)currLocation.getCgiPath().c_str();
+                                // test[1] = NULL;
+                                // execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str()));
+                                
+                                // write(writeFd[0],"a\r\n\r\n",5);
+                                // write(readFd[1],"a\r\n\t\n",5);
+                                // std::cout << "execle end"<<std::endl;
+                                exit(1);
+                            }
+                        else
+                        {
+                            close(currServer.getWriteFd()[0]);
+                            close(currServer.getReadFd()[1]);
+                            
+                            //exe 실행후
+                            while ((n = read(currServer.getReadFd()[0], buf,1024)) > 0)
+                            {
+                                buf[n] = '\0';
+                                body += buf;
+                                memset(buf, 0, 1024);
+                            }
+                            std::cout << "execl buf: " << body <<std::endl;
+                            waitpid(pid, NULL, WNOHANG);
+                            // wait(pid,NULL,0);
+                        }
+                        }
                 }
                 //알맞은서버찾아서 이터든 뭐든 반환?
                 else if (serverIter != serverMap.end())
@@ -312,12 +370,27 @@ void WebServer::monitorKqueue()
             }
             else if (curr_event->filter == EVFILT_WRITE)
             {
-                // if ()
-                // {
-                    
-                // }
-                // else 
-                if (clients.find(curr_event->ident)!= clients.end())
+                if (fdManager.find(curr_event->ident) != fdManager.end())
+                {
+                    // write  
+                    if ( write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size()))
+                    {
+                        std::cout << " hyopark is very hot\n";
+                        serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
+                        std::cout<< "readfd 0 :" << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
+		                change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		                fdManager.erase(curr_event->ident);
+		                //여기 안됨 리드이벤트 안됨.. 해쭤잉!
+		                // continue;
+                        // exit(1);
+                    }
+                    else
+                    {
+                        std::cout << " hyopark is very cold\n";
+                    }
+                    // continue;
+                }
+                else if (clients.find(curr_event->ident)!= clients.end())
                 {
                     Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
                     

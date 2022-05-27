@@ -73,10 +73,21 @@ class Server
 			bool fdFlag;//resource or cgi
 			std::vector <struct kevent> *changeList;
 			
+			int readFd[2];
+			int writeFd[2];
+			
+			
 		protected:
 			// std::map<std::vector<int>, std::string> errPage; // errCode , Page;
 			
 		public:
+		
+		int *getReadFd();
+		int *getWriteFd();
+			
+		void setReadFd();
+		void setWriteFd();	
+			
 		void setStatus(int stat){status = stat;}
 		int getStatus(){return (status);}
 		void setChunkedSize(int size){chunkedSize = size;}
