@@ -164,20 +164,16 @@ void WebServer::monitorKqueue()
             }
             else if (curr_event->filter == EVFILT_READ)
             {
-                std::cout << "read evnet \n";
                 // map indexing으로 접근 가능한지 확인해볼 것
                 //TODO : 어떤서버에 연결할지 함수로 만들었으면 좋겠다.
                 std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    std::cout << "fdmannngegrr find  \n";
                     Server &currServer = serverMap[fdManager[curr_event->ident]];
                     if (currServer.getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
                         currServer.readFile(curr_event->ident);//일반 get 메소드 
                     else
                         {
-                            std::cout << "fokrkrkrkrkrkrkkk  \n";
-                            exit(1);
                             //read
                             pid_t pid;
                             std::string body;
@@ -372,15 +368,15 @@ void WebServer::monitorKqueue()
             {
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    // write  
-                    if ( write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size()))
+                    // write 
+                    // write 할 때 body가 비어있을 때 write 에러남.
+                    // serverMap[fdManager[curr_event->ident]].getRequestClass().getBody() <- 문제.
+                    // write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size())
+                    if (write(curr_event->ident, "", 1))
                     {
                         std::cout << " hyopark is very hot\n";
                         serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
-                        std::cout<< "readfd 0 :" << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
 		                change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-		                fdManager.erase(curr_event->ident);
-		                //여기 안됨 리드이벤트 안됨.. 해쭤잉!
 		                // continue;
                         // exit(1);
                     }

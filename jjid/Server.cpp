@@ -286,7 +286,9 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		setWriteFd();
 		
 		setFdManager(writeFd[1], getServerFd());
+		std::cout << "before write event size: " << change_list.size() << std::endl;
 		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		std::cout << "after write event size: " << change_list.size() << std::endl;
 		// setFdManager(readFd[0], getServerFd());
 		// change_events(change_list, readFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		return ;

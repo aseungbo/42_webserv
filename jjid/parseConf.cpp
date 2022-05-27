@@ -166,6 +166,7 @@ Location Parser::initLocation()
 {
     Location loc;
 
+    loc.setLocationType(LOCATIONTYPE_NORMAL);
     if (locMap.find("extension") != locMap.end())
         loc.setExtension(locMap.find("extension")->second[0]);
     if (locMap.find("cgi") != locMap.end())

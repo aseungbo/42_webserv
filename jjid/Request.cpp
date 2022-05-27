@@ -81,7 +81,7 @@ std::pair <std::string, std::string> Request::initRequestHeader(const std::strin
 	}
 	std::pair<std::string, std::string> temp;
 	temp.first = splitHeader[0];
-	temp.second = splitHeader[1].substr(1,splitHeader[1].size() - 1);//TODO:공백날리기 다시생각 하기~ 스페이스 여러개 또는 없이 왔을때
+	temp.second = splitHeader[1].substr(1,splitHeader[1].size() - 2);//TODO:공백날리기 다시생각 하기~ 스페이스 여러개 또는 없이 왔을때
 	
 	std::cout << temp.first <<  temp.second << std::endl;
 	std::cout << "initRequestHeader : " << "[" << temp.first << " , "<< temp.second << "]" << std::endl;
