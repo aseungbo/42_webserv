@@ -35,9 +35,11 @@
 #define LOCATIONTYPE_NORMAL 0
 #define LOCATIONTYPE_CGI 1
 #define LOCATIONTYPE_REDIR 2
+#define LOCATIONTYPE_CGI_DONE 3
 
 void change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
+char  **makeEnvp();
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
@@ -154,7 +156,7 @@ class Server
 			
 			void preProcess();
 			int checkMethod();
-			Location getCurrLocation();
+			Location &getCurrLocation();
 			void setCgiEvent(std::vector <struct kevent> &change_list);
 			void linkFdManager(std::map<int, int> &FdManager);
 			void setFdManager(int fd, int serverFd);

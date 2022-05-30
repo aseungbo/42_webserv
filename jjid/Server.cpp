@@ -77,7 +77,7 @@ void Server::forkCgiPid()
 // 	this->envp = envp;
 // }
 
-Location Server::getCurrLocation()
+Location &Server::getCurrLocation()
 {
 	return (this->currLocation);
 }
@@ -201,16 +201,16 @@ void Server::setFdManager(int fd, int serverFd)
 }
 
 
-char  **makeEnvp(const char *str)
+char  **makeEnvp()
 {
-	char *test = "REQUEST_METHOD=POST";
+	char *test = "REQUEST_METHOD=GET";
 	char **test2 = new char*[5];
 	test2[0] = test;
 	test = "SERVER_PROTOCOL=HTTP/1.1";
 	test2[1] = test;
-	test = "PATH_INFO=/Users/hyopark/b2c/webserv/0525/jjid/YoupiBanane/youpi.bla" ;
+	test = "PATH_INFO=/Users/mac/goinfre/42_jjidserv/jjid/YoupiBanane/youpi.bla" ;
 	test2[2] = test;
-	test = "CONTENT_LENGTH=5" ;
+	test = "CONTENT_LENGTH=10";
 	test2[3] = test;
 	test2[4] = NULL;
 	
@@ -265,8 +265,9 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 	// checkPath(path);
 	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
 
-	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL)
+	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL || currLocation.getLocationType() == LOCATIONTYPE_CGI_DONE)
 	{
+		std::cout << "nomal !\n";
 		switch (currRequest.getStartLine().method)
 		{
 			case GET:
@@ -295,6 +296,7 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		setReadFd();
 		setWriteFd();
 		
+		std::cout << "cGI !\n";
 		setFdManager(writeFd[1], getServerFd());
 		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		std::cout << "write[fd]: " << writeFd[1] << std::endl;
