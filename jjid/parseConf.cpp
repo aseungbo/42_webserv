@@ -273,6 +273,7 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
         if (locations.size() != 0)
             serv.setLocation(locations);
         serv.setStatus(READY);
+        serv.getResponseClass().setStatusCode(0);
         // only for TEST
         // std::cout << "serv root: " << serv.getRoot() << std::endl;
         // std::cout << "serv name: " << serv.getHost()[0]<< std::endl;

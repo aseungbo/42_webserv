@@ -75,12 +75,12 @@ class Server
 			
 			int readFd[2];
 			int writeFd[2];
-			
-			
-		protected:
-			// std::map<std::vector<int>, std::string> errPage; // errCode , Page;
+			pid_t cgiPid;
 			
 		public:
+
+		pid_t getCgiPid();
+		void forkCgiPid();
 		
 		int *getReadFd();
 		int *getWriteFd();

@@ -31,6 +31,16 @@ void Server::setWriteFd()
 	pipe(writeFd);
 }
 
+pid_t Server::getCgiPid()
+{
+	return (cgiPid);
+}
+
+void Server::forkCgiPid()
+{
+	cgiPid = fork();
+}
+
 
 // int *Server::getCgiWriteFd()
 // {
@@ -287,8 +297,7 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		
 		setFdManager(writeFd[1], getServerFd());
 		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-		// setFdManager(readFd[0], getServerFd());
-		// change_events(change_list, readFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		std::cout << "write[fd]: " << writeFd[1] << std::endl;
 		return ;
 	}
 	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)

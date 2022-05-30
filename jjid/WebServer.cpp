@@ -164,58 +164,28 @@ void WebServer::monitorKqueue()
             }
             else if (curr_event->filter == EVFILT_READ)
             {
-                std::cout << "read evnet \n";
                 // map indexing으로 접근 가능한지 확인해볼 것
                 //TODO : 어떤서버에 연결할지 함수로 만들었으면 좋겠다.
                 std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    std::cout << "fdmannngegrr find  \n";
+                    std::cout << "[Read] curr ident: " << curr_event->ident << std::endl;
                     Server &currServer = serverMap[fdManager[curr_event->ident]];
                     if (currServer.getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
                         currServer.readFile(curr_event->ident);//일반 get 메소드 
                     else
-                        {
-                            std::cout << "fokrkrkrkrkrkrkkk  \n";
-                            exit(1);
-                            //read
-                            pid_t pid;
-                            std::string body;
-                            int n;
-                            char buf[1024];
-                            pid = fork();
-                            if (pid == 0)
-                            {
-                                dup2(currServer.getReadFd()[1],1);
-                                close(currServer.getReadFd()[0]);
-                                // close(readFd[1]);
-                                dup2(currServer.getWriteFd()[0],0);
-                                // close(writeFd[0]);
-                                close(currServer.getWriteFd()[1]);
-                                
-                                while ((n = read(currServer.getWriteFd()[0], buf,1024)) > 0)
-                                {
-                                    buf[n] = '\0';
-                                    body += buf;
-                                    memset(buf, 0, 1024);
-                                }
-                                std::cout << "child booooooooooody~! : " << body <<std::endl;
-                                write(currServer.getReadFd()[1], body.c_str(), body.size());
-                                // char *test[2] ;
-                                // test[0] = (char *)currLocation.getCgiPath().c_str();
-                                // test[1] = NULL;
-                                // execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str()));
-                                
-                                // write(writeFd[0],"a\r\n\r\n",5);
-                                // write(readFd[1],"a\r\n\t\n",5);
-                                // std::cout << "execle end"<<std::endl;
-                                exit(1);
-                            }
-                        else
+                    {
+                        //read
+                        if (currServer.getCgiPid() != 0)
                         {
                             close(currServer.getWriteFd()[0]);
                             close(currServer.getReadFd()[1]);
                             
+                            std::cout << "[parent]" << std::endl;
+
+                            std::string body;
+                            int n;
+                            char buf[1024];
                             //exe 실행후
                             while ((n = read(currServer.getReadFd()[0], buf,1024)) > 0)
                             {
@@ -224,10 +194,11 @@ void WebServer::monitorKqueue()
                                 memset(buf, 0, 1024);
                             }
                             std::cout << "execl buf: " << body <<std::endl;
-                            waitpid(pid, NULL, WNOHANG);
+                            waitpid(currServer.getCgiPid(), NULL, WNOHANG);
                             // wait(pid,NULL,0);
                         }
-                        }
+                        fdManager.erase(curr_event->ident);
+                    }
                 }
                 //알맞은서버찾아서 이터든 뭐든 반환?
                 else if (serverIter != serverMap.end())
@@ -372,15 +343,60 @@ void WebServer::monitorKqueue()
             {
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    // write  
-                    if ( write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size()))
+                    std::cout << "[write] curr ident: " << curr_event->ident << std::endl;
+                    // write 
+                    std::cout << "[body]" << serverMap[fdManager[curr_event->ident]].getRequestClass().getBody() << std::endl;
+                    if ((write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size())) != -1)
                     {
+                        write(curr_event->ident, "\r\n", 2);
                         std::cout << " hyopark is very hot\n";
+                        serverMap[fdManager[curr_event->ident]].forkCgiPid();
+                        if (serverMap[fdManager[curr_event->ident]].getCgiPid() == 0)
+                        {
+                            std::string body;
+                            int n;
+                            char buf[1024];
+
+                            dup2(serverMap[fdManager[curr_event->ident]].getReadFd()[1],1);
+                            close(serverMap[fdManager[curr_event->ident]].getReadFd()[0]);
+                            // close(readFd[1]);
+                            dup2(serverMap[fdManager[curr_event->ident]].getWriteFd()[0],0);
+                            // close(writeFd[0]);
+                            close(serverMap[fdManager[curr_event->ident]].getWriteFd()[1]);
+
+                            while ((n = read(serverMap[fdManager[curr_event->ident]].getWriteFd()[0], buf,1024)) >= 0)
+                            {
+                                    buf[n] = '\0';
+                                    // std::cout << "[ " << buf << " ]" << std::endl;
+                                    // std::cout << "[ " << n << " ]" << std::endl;
+                                    
+                                    body += buf;
+                                    if (body.find("\r\n") != std::string::npos)
+                                        break;
+                                    // if (body.size() == serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size() )
+                                    //     break ;
+                                    memset(buf, 0, 1024);
+                            }
+                            // Child write to Parent
+                            write(serverMap[fdManager[curr_event->ident]].getReadFd()[1], body.c_str(), body.size());
+                            // char *test[2] ;
+                            // test[0] = (char *)currLocation.getCgiPath().c_str();
+                            // test[1] = NULL;
+                            // execve(currLocation.getCgiPath().c_str(),test, makeEnvp(path.c_str()));
+                            
+                            // write(writeFd[0],"a\r\n\r\n",5);
+                            // write(readFd[1],"a\r\n\t\n",5);
+                            // std::cout << "execle end"<<std::endl;
+                            exit(1);
+                        }
                         serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
-                        std::cout<< "readfd 0 :" << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
-		                change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-		                fdManager.erase(curr_event->ident);
-		                //여기 안됨 리드이벤트 안됨.. 해쭤잉!
+                        change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                        std::cout << "read[fd]: " << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
+                        fdManager.erase(curr_event->ident);
+                        // read(serverMap[fdManager[curr_event->ident]].getReadFd()[0], buf,1024);
+
+                        // serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
+		                // change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		                // continue;
                         // exit(1);
                     }
@@ -434,6 +450,7 @@ void WebServer::monitorKqueue()
                         {
                             clients[curr_event->ident].clear();
                             clientsServerMap.erase(curr_event->ident);
+                            currSever.getResponseClass().setStatusCode(0);
                         }
                         //지우기 Server : curr들 초기화 initServerCurrResponseAndRequestAndLocation
                     }
