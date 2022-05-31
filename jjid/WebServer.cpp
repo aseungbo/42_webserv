@@ -187,7 +187,7 @@ void WebServer::monitorKqueue()
                             int n;
                             char buf[1024];
                             //exe 실행후
-                            while ((n = read(currServer.getReadFd()[0], buf,1024)) > 0)
+                            while ((n = read(currServer.getReadFd()[0], buf,1023)) > 0)
                             {
                                 std::cout<< "n:" << n <<std::endl;
                                 buf[n] = '\0';
@@ -195,6 +195,7 @@ void WebServer::monitorKqueue()
                                 // TODO : 클러스터에서 확인해보기 >< 꾸?
                                 // if (body.find("\r\n") != std::string::npos)
                                 //     break ;
+                                
                                 memset(buf, 0, 1024);
                             }
                             std::cout << "execl buf: " << body <<std::endl;
@@ -236,7 +237,7 @@ void WebServer::monitorKqueue()
                     // parse request
                     char buf[1024];
                     memset(buf,0,1024);
-                    int n = read(curr_event->ident, buf, sizeof(buf));
+                    int n = read(curr_event->ident, buf, sizeof(buf) - 1);
                     if (n <= 0)
                     {
                         if (n < 0)
@@ -357,75 +358,92 @@ void WebServer::monitorKqueue()
             {
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    std::cout << "[write] curr ident: " << curr_event->ident << std::endl;
-                    // write 
-                    std::cout << "[body]" << serverMap[fdManager[curr_event->ident]].getRequestClass().getBody() << std::endl;
-                    if ((write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size())) != -1)
+                    // Server &currServer = serverMap[fdManager[curr_event->ident]];
+                    std::cout << "type :: "<< serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() <<std::endl;;
+                    if (serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI)//cgi처리로직 조건
                     {
-                        // write(curr_event->ident, "\r\n", 2); 
-                        std::cout << " hyopark is very hot" << std::endl;
-                        serverMap[fdManager[curr_event->ident]].forkCgiPid();
-                        if (serverMap[fdManager[curr_event->ident]].getCgiPid() == 0)
+                        std::cout << "[write] curr ident: " << curr_event->ident << std::endl;
+                        // write 
+                        std::cout << "[body]" << serverMap[fdManager[curr_event->ident]].getRequestClass().getBody() << std::endl;
+                        
+                        if ((write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size())) != -1)
                         {
-                            std::string body;
-                            int n;
-                            char buf[1024];
-
-                            dup2(serverMap[fdManager[curr_event->ident]].getReadFd()[1],1);
-                            // close(serverMap[fdManager[curr_event->ident]].getReadFd()[1]);
-
-                            close(serverMap[fdManager[curr_event->ident]].getReadFd()[0]);
-                            // close(readFd[1]);
-                            dup2(serverMap[fdManager[curr_event->ident]].getWriteFd()[0],0);
-                            // close(writeFd[0]);
-                            close(serverMap[fdManager[curr_event->ident]].getWriteFd()[1]);
-
-                            // while ((n = read(serverMap[fdManager[curr_event->ident]].getWriteFd()[0], buf,1024)) >= 0)
-                            // {
-                            //         buf[n] = '\0';
-                            //         // std::cout << "[ " << buf << " ]" << std::endl;
-                            //         // std::cout << "[ " << n << " ]" << std::endl;
-                                    
-                            //         body += buf;
-                            //         if (body.find("\r\n") != std::string::npos)
-                            //             break;
-                            //         // if (body.size() == serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size() )
-                            //         //     break ;
-                            //         memset(buf, 0, 1024);
-                            // }
-
-                            // Child write to Parent
-                            // write(serverMap[fdManager[curr_event->ident]].getReadFd()[1], body.c_str(), body.size());
-                            
-                            char *test[2] ;
-                            test[0] = (char *)(serverMap[fdManager[curr_event->ident]].getCurrLocation().getCgiPath().c_str());
-                            test[1] = NULL;
-                            if((execve(serverMap[fdManager[curr_event->ident]].getCurrLocation().getCgiPath().c_str(),test, makeEnvp())) == -1 )
+                            // write(curr_event->ident, "\r\n", 2); 
+                            std::cout << " hyopark is very hot" << std::endl;
+                            // Server &serverMap[fdManager[curr_event->ident]] = serverMap[fdManager[curr_event->ident]];
+                            // std::cout << "=================="<< std::endl;
+                            // serverMap[fdManager[curr_event->ident]].makeEnvp();
+                            // std::cout << "=================="<< std::endl;
+                            // exit(1);
+                            serverMap[fdManager[curr_event->ident]].forkCgiPid();
+                            if (serverMap[fdManager[curr_event->ident]].getCgiPid() == 0)
                             {
-                                write(serverMap[fdManager[curr_event->ident]].getReadFd()[1], "errororor\n", 11);
+                                std::string body;
+                                int n;
+                                char buf[1024];
+
+                                dup2(serverMap[fdManager[curr_event->ident]].getReadFd()[1],1);
+                                // close(serverMap[fdManager[curr_event->ident]].getReadFd()[1]);
+
+                                close(serverMap[fdManager[curr_event->ident]].getReadFd()[0]);
+                                // close(readFd[1]);
+                                dup2(serverMap[fdManager[curr_event->ident]].getWriteFd()[0],0);
+                                // close(writeFd[0]);
+                                close(serverMap[fdManager[curr_event->ident]].getWriteFd()[1]);
+
+                                // while ((n = read(serverMap[fdManager[curr_event->ident]].getWriteFd()[0], buf,1024)) >= 0)
+                                // {
+                                //         buf[n] = '\0';
+                                //         // std::cout << "[ " << buf << " ]" << std::endl;
+                                //         // std::cout << "[ " << n << " ]" << std::endl;
+                                        
+                                //         body += buf;
+                                //         if (body.find("\r\n") != std::string::npos)
+                                //             break;
+                                //         // if (body.size() == serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size() )
+                                //         //     break ;
+                                //         memset(buf, 0, 1024);
+                                // }
+
+                                // Child write to Parent
+                                // write(serverMap[fdManager[curr_event->ident]].getReadFd()[1], body.c_str(), body.size());
+                                
+                                char *test[2] ;
+                                test[0] = (char *)(serverMap[fdManager[curr_event->ident]].getCurrLocation().getCgiPath().c_str());
+                                test[1] = NULL;
+                                if((execve(serverMap[fdManager[curr_event->ident]].getCurrLocation().getCgiPath().c_str(),test, serverMap[fdManager[curr_event->ident]].makeEnvp())) == -1 )
+                                {
+                                    write(serverMap[fdManager[curr_event->ident]].getReadFd()[1], "errororor\n", 11);
+                                    exit(1);
+                                }
+                                // write(writeFd[0],"a\r\n\r\n",5);
+                                // write(readFd[1],"a\r\n\t\n",5);
+                                // std::cout << "execle end"<<std::endl;
                                 exit(1);
                             }
-                            // write(writeFd[0],"a\r\n\r\n",5);
-                            // write(readFd[1],"a\r\n\t\n",5);
-                            // std::cout << "execle end"<<std::endl;
-                            exit(1);
-                        }
-                        serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
-                        change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                        std::cout << "read[fd]: " << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
-                        fdManager.erase(curr_event->ident);
-                        // read(serverMap[fdManager[curr_event->ident]].getReadFd()[0], buf,1024);
+                            serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
+                            change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            std::cout << "read[fd]: " << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
+                            fdManager.erase(curr_event->ident);
+                            // read(serverMap[fdManager[curr_event->ident]].getReadFd()[0], buf,1024);
 
-                        // serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
-		                // change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-		                // continue;
-                        // exit(1);
+                            // serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
+                            // change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            // continue;
+                            // exit(1);
+                        }
+                        else
+                        {
+                            std::cout << " hyopark is very cold\n";
+                        }
                     }
-                    else
+                    else if (serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE || serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
                     {
-                        std::cout << " hyopark is very cold\n";
+                        serverMap[fdManager[curr_event->ident]].writeFile(curr_event->ident);
+                        fdManager.erase(curr_event->ident);
                     }
                     // continue;
+                    
                 }
                 else if (clients.find(curr_event->ident)!= clients.end())
                 {
@@ -478,6 +496,7 @@ void WebServer::monitorKqueue()
                             clientsServerMap.erase(curr_event->ident);
                             currSever.getResponseClass().setStatusCode(0);
                         }
+                        currSever.resetServerValues();
                         //지우기 Server : curr들 초기화 initServerCurrResponseAndRequestAndLocation
 
                     }

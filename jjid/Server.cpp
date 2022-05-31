@@ -200,22 +200,121 @@ void Server::setFdManager(int fd, int serverFd)
 	fdManager->insert(std::pair<int, int>(fd,serverFd));
 }
 
-
-char  **makeEnvp()
+char  **Server::makeEnvp()
 {
-	char *test = "REQUEST_METHOD=GET";
-	char **test2 = new char*[5];
-	test2[0] = test;
-	test = "SERVER_PROTOCOL=HTTP/1.1";
-	test2[1] = test;
-	test = "PATH_INFO=/Users/hyopark/b2c/webserv/0531-2/jjid/YoupiBanane/youpi.bla" ;
-	test2[2] = test;
-	test = "CONTENT_LENGTH=10";
-	test2[3] = test;
-	test2[4] = NULL;
+
+	// char *test = "REQUEST_METHOD=GET";
+    // char **test2 = new char*[5];
+    // test2[0] = test;
+    // test = "SERVER_PROTOCOL=HTTP/1.1";
+    // test2[1] = test;
+    // test = "PATH_INFO=/Users/mac/goinfre/42_jjidserv/jjid/YoupiBanane/youpi.bla" ;
+    // test2[2] = test;
+    // test = "CONTENT_LENGTH=10";
+    // test2[3] = test;
+    // test2[4] = NULL;
+    // return (test2);
+	char **result = new char*[6];
+	std::string str;
+
+	int ret = currRequest.getStartLine().method;
+	if (ret == 0)
+		str = "GET";
+	else if (ret == 1)
+		str = "HEAD";
+	else if (ret == 2)
+		str = "POST";
+	else if (ret == 3)
+		str = "DELETE";
 	
-	return (test2);
+	//result[0]
+	std::string temp = "REQUEST_METHOD=" + str;
+	// std::cout << "jjibal0"<<temp<<std::endl;
+	result[0] = new char[temp.size() + 1];
+	result[0] = strcpy(result[0], temp.c_str());
+	temp.clear();
+	
+	// // std::cout << "jjibal"<<result[0]<<std::endl;
+	temp = "SERVER_PROTOCOL=HTTP/1.1";
+	result[1] = new char[temp.size() + 1];
+	result[1] = strcpy(result[1], temp.c_str());
+	temp.clear();
+
+	// std::cout <<"[" << currRequest.getStartLine().path << "]" << std::endl;
+
+	temp = "PATH_INFO=/Users/mac/goinfre/42_jjidserv/jjid/YoupiBanane/youpi.bla";
+	result[2] = new char[temp.size() + 1];
+	result[2] = strcpy(result[2], temp.c_str());
+	temp.clear();
+	
+	// std::cout << "~~~ "<< currRequest.getHeader().getContent().find("Content-Length")->second << std::endl;
+	// std::cout << currRequest.getBody().size() << std::endl;
+	
+	temp = "CONTENT_LENGTH=" + currRequest.getHeader().getContent().find("Content-Length")->second;
+	// std::cout << "jjibal0"<<temp<<std::endl;
+	result[3] = new char[temp.size() + 1];
+	result[3] = strcpy(result[3], temp.c_str());
+	temp.clear();
+
+	
+	temp = "CONTENT_TYPE=" + currRequest.getHeader().getContent().find("Content-Type")->second;
+	result[4] = new char[temp.size() + 1];
+	result[4] = strcpy(result[4], temp.c_str());
+	temp.clear();
+
+	
+	// //이건 잘 모르겠음
+	// temp = "USER_AGENT=" + currRequest.getHeader().getContent().find("User-Agent")->second;
+	// result[5] = new char[temp.size() + 1];
+	// result[5] = strcpy(result[5], temp.c_str());
+	// temp.clear();
+
+
+	// temp = "HTTP_ACCEPT=" + currRequest.getHeader().getContent().find("Accept")->second;
+	// result[6] = new char[temp.size() + 1];
+	// result[6] = strcpy(result[6], temp.c_str());
+	// temp.clear();
+	
+
+	// int ret_num = currRequest.getHeader().getContent().find("Host")->second.find(":");
+	// std::string rret = currRequest.getHeader().getContent().find("Host")->second.erase(ret_num);
+	// temp = "SERVER_PORT=" + rret;
+	// result[7] = new char[temp.size() + 1];
+	// result[7] = strcpy(result[7], temp.c_str());
+	// temp.clear();
+	
+
+	// temp = "SERVER_NAME=JJID";
+	// result[8] = new char[temp.size() + 1];
+	// result[8] = strcpy(result[8], temp.c_str());
+	// temp.clear();
+
+
+	// temp = "GATEWAY_INTERFACE=CGI/1.1";
+	// result[9] = new char[temp.size() + 1];
+	// result[9] = strcpy(result[9], temp.c_str());
+	// temp.clear();
+
+
+	// temp = "HTTP_ACCEPT_CHARSET=utf-8";
+	// result[10] = new char[temp.size() + 1];
+	// result[10] = strcpy(result[10], temp.c_str());
+	// temp.clear();
+	
+
+	result[5] = NULL;
+	
+	
+	// std::cout << "<<<<<<<<<<<<<<" << std::endl;
+	// for (int i = 0; result[i] != NULL; i++)
+	// {
+	// 	std::cout << "[" << result[i] << "]" << std::endl;
+	// }
+	// std::cout << "<<<<<<<<<<<<<<" << std::endl;
+	
+	return (result);
 }
+
 
 // void Server::setCgiEvent(std::vector <struct kevent> &change_list)
 // {
@@ -233,8 +332,8 @@ void Server::preProcess()
     //allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
 	//isAllowMethod();
 	//405ls
-	this->currResponse.setBody("");
-	this->currResponse.setStatusCode(0);
+	// this->currResponse.setBody("");
+	// this->currResponse.setStatusCode(0);
 	// this->currResponse.setHeader(0);
 	std::string pathTmp = currRequest.getStartLine().path;
 	std::cout << "ori pathTmp: "<< pathTmp << std::endl;
@@ -244,6 +343,7 @@ void Server::preProcess()
 	currRequest.setPath(pathTmp);
 	std::cout << "pathTmp: "<< pathTmp << std::endl;
 	std::cout << "path2: "<< currRequest.getStartLine().path << std::endl;
+	std::cout << "prepro :: " << currLocation.getLocationType()  <<std::endl;
 }
 
 // int Server::checkMethod()
@@ -264,7 +364,7 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 	// aliasRoot(currLocation, path);
 	// checkPath(path);
 	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
-
+	std::cout << "pro :: " << currLocation.getLocationType()  <<std::endl;
 	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL || currLocation.getLocationType() == LOCATIONTYPE_CGI_DONE)
 	{
 		std::cout << "nomal !\n";
@@ -292,7 +392,7 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		}
 	}
 	else if (currLocation.getLocationType() ==  LOCATIONTYPE_CGI)
-	{		
+	{
 		setReadFd();
 		setWriteFd();
 		
@@ -434,7 +534,7 @@ Location Server::whereIsLocation(std::string const & path)
 // 	return (getDefaultLocation());
 // }
 
-int Server::serchIndex(std::string &path, Location currLocation)
+int Server::serchIndex(std::string &path, Location _currLocation)
 {
 	struct stat buf;
 	
@@ -442,17 +542,18 @@ int Server::serchIndex(std::string &path, Location currLocation)
 	//설정 인덱스가 없으면 디폴트 인덱스(현재는 index.html파일) 추가 후 종료
 	if (path[path.size() - 1] != '/')
 	{
+		std::cout << "400000000000003"<<std::endl;
 		setErrorResponse(403);
 		return (ADD_INDEX_FAIL);
 	}
-	if (currLocation.getIndex().size() == 0)
+	if (_currLocation.getIndex().size() == 0)
 	{
 		std::cout << "index 0 \n" ;
 		path += DEFAULT_INDEX;
 		return ADDED_INDEX;
 	}
 	//설정 인덱스가 있다면 가장 처음 있는 파일 경로 넣고 종료
-	std::vector<std::string> currIndex = currLocation.getIndex();
+	std::vector<std::string> currIndex = _currLocation.getIndex();
 	for (int idx = 0; idx < currIndex.size(); idx++)
 	{
 		std::string tryIndexPath = path + currIndex[idx];
@@ -470,10 +571,10 @@ int Server::serchIndex(std::string &path, Location currLocation)
 
 void Server::readFile(int fd)
 {
-    std::string content;
+    std::string content = "";
     int n;
     char buf[1024];
-    while ((n = read(fd, buf,1024)) > 0)
+    while ((n = read(fd, buf,1023)) > 0)
     {
         buf[n] = '\0';
         content += buf;
@@ -485,6 +586,15 @@ void Server::readFile(int fd)
     this->currResponse.setStatusCode(200);
     this->currResponse.setBody(content);
     close(fd);
+}
+
+void Server::writeFile(int fd)
+{
+	std::cout << " wrtie File " << std::endl;
+	write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
+	this->currResponse.setStatusCode(201);
+    // this->currResponse.setBody(content);
+	close(fd);
 }
 
 void Server::openFile(std::string path, int isHead)
@@ -570,7 +680,7 @@ void aliasRoot(Location currLocation, std::string &path)
 	if (path[path.size() - 1 ] != '/')
 		path = path + "/";
 	std::string originPath = path;
-	std::cout << "curr Rot : "  << currRoot << "lo path: "<< locationPath << "ori path :" <<  originPath << std::endl;
+	std::cout << "[curr Rot]: "  << currRoot << "[lo path]: "<< locationPath << "[ori path]:" <<  originPath << std::endl;
 	path = currRoot + originPath.substr(locationPath.size(), originPath.size() - locationPath.size() ); 
 }
 
@@ -619,13 +729,20 @@ void Server::postMethod()
 	// Location currLocation = whereIsLocation(path, locations);
 	
 	// return (setErrorResponse(405));
-	std::string path = this->currRequest.getStartLine().path;
-	Location currLocation = whereIsLocation(path);//find or  map match 등 다른이름 추천받음
-	aliasRoot(currLocation, path);
+	
+	
+	// std::string path = this->currRequest.getStartLine().path;
+	// Location currLocation = whereIsLocation(path);//find or  map match 등 다른이름 추천받음
+	// aliasRoot(currLocation, path);
+	
+	
 	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
 	
+	std::string path = this->currRequest.getStartLine().path;
 	int pathType = checkPath(path);
-	serchIndex(path, currLocation);
+	//TODO serchIndex 인자값으로 해당 메소드 넘겨줘서 겟이면 바꾸고 포스트면 안바꾸고로 수정필요
+	if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
+		currResponse.setStatusCode(0);
 
 	int fd;
 	std::cout << "post result:" << path << std::endl;
@@ -649,18 +766,22 @@ void Server::postMethod()
 		std::cout << "dir " << std::endl;
 		return (setErrorResponse(403));
 	}
-	currResponse.setStatusCode(201);
+	// currResponse.setStatusCode(201);//이거 안바꿔야함
 	std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
 	// if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
 	if (currRequest.getBody().size() != 0)
-		write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
+	{
+		setFdManager(fd, getServerFd());
+		change_events(*changeList, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0,0,NULL);
+		// write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
+	}
 	else
-		{
-			std::cout << " 504:::"<<std::endl;
-			currResponse.setStatusCode(405);
-		}
-	close(fd);
-	
+	{
+		std::cout << " 504:::"<<std::endl;
+		currResponse.setStatusCode(405);
+		close(fd);
+	}
+	//write 처리후 fd 닫기 까먹지 않기 ><
 }
 
 void Server::deleteMethod()
@@ -673,6 +794,27 @@ void Server::deleteMethod()
 	std::remove(path.c_str());
 }
 
+void Server::resetServerValues()
+{
+	getResponseClass().setBody("");
+	getResponseClass().setStatusCode(0);
+	getResponseClass().getHeader().getContent().clear();
+	
+	getRequestClass().setBody("");
+	getRequestClass().setPath("");
+	// getRequestClass().getStartLine().http = "";
+	getRequestClass().setPath("");
+	
+	if (getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE)
+		getCurrLocation().setLocationType(LOCATIONTYPE_CGI);
+	// TODO w/r fd 들 초기화 해야하나?
+	// delete [] envp;
+	envp = NULL;
+	setChunkedSize(0);
+	setCurrChunkedSize(0);
+	// TODO fdFlag 초기화?
+
+}
 // void Server::headMethod()
 // {
 		

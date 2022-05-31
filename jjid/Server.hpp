@@ -39,7 +39,6 @@
 
 void change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
-char  **makeEnvp();
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
@@ -58,10 +57,9 @@ class Server
 			Request currRequest;
 			Response currResponse;//구조적으로 맘에 안듦 (jji, 29, 무직)
 			
-			int cgiWriteFd[2];
-			int cgiReadFd[2];
-			std::string cgiBody;
-			char **envp;
+			// int cgiWriteFd[2];
+			// int cgiReadFd[2];
+			// std::string cgiBody;
 			
 			// test
 			int clientSocket;
@@ -79,8 +77,10 @@ class Server
 			int writeFd[2];
 			pid_t cgiPid;
 			
+			char **envp;
 		public:
 
+		char  **makeEnvp();
 		pid_t getCgiPid();
 		void forkCgiPid();
 		
@@ -89,7 +89,7 @@ class Server
 			
 		void setReadFd();
 		void setWriteFd();	
-			
+	
 		void setStatus(int stat){status = stat;}
 		int getStatus(){return (status);}
 		void setChunkedSize(int size){chunkedSize = size;}
@@ -165,6 +165,9 @@ class Server
 			int getServerFd();
 			void linkChangeList(std::vector <struct kevent> &changeList);
 			void readFile(int fd);
+			void writeFile(int fd);
+			
+			void resetServerValues();
 	};
 
 

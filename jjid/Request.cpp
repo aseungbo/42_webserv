@@ -105,6 +105,7 @@ void Request::parseRequestMessage(std::string requestMessage)
 	if (requestMessage.size() == 0)
 		return ;
 	clearRequest();
+	std::cout <<"<" << requestMessage << ">"<<std::endl ;
 	// std::cout << requestMessage << std::endl;
 	// if (headerDone == false)
 	// {
