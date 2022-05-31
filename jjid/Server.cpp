@@ -470,10 +470,10 @@ int Server::serchIndex(std::string &path, Location currLocation)
 
 void Server::readFile(int fd)
 {
-    std::string content;
+    std::string content = "";
     int n;
     char buf[1024];
-    while ((n = read(fd, buf,1024)) > 0)
+    while ((n = read(fd, buf,1023)) > 0)
     {
         buf[n] = '\0';
         content += buf;
@@ -570,7 +570,7 @@ void aliasRoot(Location currLocation, std::string &path)
 	if (path[path.size() - 1 ] != '/')
 		path = path + "/";
 	std::string originPath = path;
-	std::cout << "curr Rot : "  << currRoot << "lo path: "<< locationPath << "ori path :" <<  originPath << std::endl;
+	std::cout << "[curr Rot]: "  << currRoot << "[lo path]: "<< locationPath << "[ori path]:" <<  originPath << std::endl;
 	path = currRoot + originPath.substr(locationPath.size(), originPath.size() - locationPath.size() ); 
 }
 
@@ -673,6 +673,27 @@ void Server::deleteMethod()
 	std::remove(path.c_str());
 }
 
+void Server::resetServerValues()
+{
+	getResponseClass().setBody("");
+	getResponseClass().setStatusCode(0);
+	getResponseClass().getHeader().getContent().clear();
+	
+	getRequestClass().setBody("");
+	getRequestClass().setPath("");
+	// getRequestClass().getStartLine().http = "";
+	getRequestClass().setPath("");
+	
+	if (getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE)
+		getCurrLocation().setLocationType(LOCATIONTYPE_CGI);
+	// TODO w/r fd 들 초기화 해야하나?
+	// delete [] envp;
+	envp = NULL;
+	setChunkedSize(0);
+	setCurrChunkedSize(0);
+	// TODO fdFlag 초기화?
+
+}
 // void Server::headMethod()
 // {
 		

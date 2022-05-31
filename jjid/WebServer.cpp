@@ -187,7 +187,7 @@ void WebServer::monitorKqueue()
                             int n;
                             char buf[1024];
                             //exe 실행후
-                            while ((n = read(currServer.getReadFd()[0], buf,1024)) > 0)
+                            while ((n = read(currServer.getReadFd()[0], buf,1023)) > 0)
                             {
                                 std::cout<< "n:" << n <<std::endl;
                                 buf[n] = '\0';
@@ -236,7 +236,7 @@ void WebServer::monitorKqueue()
                     // parse request
                     char buf[1024];
                     memset(buf,0,1024);
-                    int n = read(curr_event->ident, buf, sizeof(buf));
+                    int n = read(curr_event->ident, buf, sizeof(buf) - 1);
                     if (n <= 0)
                     {
                         if (n < 0)
@@ -478,6 +478,7 @@ void WebServer::monitorKqueue()
                             clientsServerMap.erase(curr_event->ident);
                             currSever.getResponseClass().setStatusCode(0);
                         }
+                        currSever.resetServerValues();
                         //지우기 Server : curr들 초기화 initServerCurrResponseAndRequestAndLocation
 
                     }

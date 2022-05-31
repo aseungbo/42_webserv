@@ -58,10 +58,9 @@ class Server
 			Request currRequest;
 			Response currResponse;//구조적으로 맘에 안듦 (jji, 29, 무직)
 			
-			int cgiWriteFd[2];
-			int cgiReadFd[2];
-			std::string cgiBody;
-			char **envp;
+			// int cgiWriteFd[2];
+			// int cgiReadFd[2];
+			// std::string cgiBody;
 			
 			// test
 			int clientSocket;
@@ -79,6 +78,7 @@ class Server
 			int writeFd[2];
 			pid_t cgiPid;
 			
+			char **envp;
 		public:
 
 		pid_t getCgiPid();
@@ -89,7 +89,7 @@ class Server
 			
 		void setReadFd();
 		void setWriteFd();	
-			
+	
 		void setStatus(int stat){status = stat;}
 		int getStatus(){return (status);}
 		void setChunkedSize(int size){chunkedSize = size;}
@@ -165,6 +165,8 @@ class Server
 			int getServerFd();
 			void linkChangeList(std::vector <struct kevent> &changeList);
 			void readFile(int fd);
+			
+			void resetServerValues();
 	};
 
 
