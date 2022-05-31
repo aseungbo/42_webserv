@@ -189,10 +189,12 @@ void WebServer::monitorKqueue()
                             //exe 실행후
                             while ((n = read(currServer.getReadFd()[0], buf,1024)) > 0)
                             {
+                                std::cout<< "n:" << n <<std::endl;
                                 buf[n] = '\0';
                                 body += buf;
-                                if (body.find("\r\n") != std::string::npos)
-                                    break ;
+                                // TODO : 클러스터에서 확인해보기 >< 꾸?
+                                // if (body.find("\r\n") != std::string::npos)
+                                //     break ;
                                 memset(buf, 0, 1024);
                             }
                             std::cout << "execl buf: " << body <<std::endl;

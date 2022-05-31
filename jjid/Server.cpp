@@ -208,7 +208,7 @@ char  **makeEnvp()
 	test2[0] = test;
 	test = "SERVER_PROTOCOL=HTTP/1.1";
 	test2[1] = test;
-	test = "PATH_INFO=/Users/mac/goinfre/42_jjidserv/jjid/YoupiBanane/youpi.bla" ;
+	test = "PATH_INFO=/Users/hyopark/b2c/webserv/0531-2/jjid/YoupiBanane/youpi.bla" ;
 	test2[2] = test;
 	test = "CONTENT_LENGTH=10";
 	test2[3] = test;
