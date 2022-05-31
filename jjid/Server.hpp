@@ -39,7 +39,6 @@
 
 void change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
-char  **makeEnvp();
 class Server 
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
@@ -81,6 +80,7 @@ class Server
 			char **envp;
 		public:
 
+		char  **makeEnvp();
 		pid_t getCgiPid();
 		void forkCgiPid();
 		
@@ -165,6 +165,7 @@ class Server
 			int getServerFd();
 			void linkChangeList(std::vector <struct kevent> &changeList);
 			void readFile(int fd);
+			void writeFile(int fd);
 			
 			void resetServerValues();
 	};
