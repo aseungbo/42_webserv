@@ -15,7 +15,7 @@
 #include "Location.hpp"
 
 #define NOT 0
-#define DIR 1
+#define _DIR 1
 #define _FILE 2
 
 // #define DEFAULT_INDEX "index.html"
