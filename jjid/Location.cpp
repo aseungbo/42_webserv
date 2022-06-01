@@ -45,6 +45,21 @@ std::string Location::getCgiPath()
 	return (cgiPath);
 }
 
+int Location::getReturnCode()
+{
+	return (returnCode);
+}
+
+std::string Location::getReturnUrl()
+{
+	return (returnUrl);
+}
+
+bool Location::getAutoIndex()
+{
+	return (autoIndex);
+}
+
 void Location::setRoot(std::string root)
 {
 	this->root = root;
@@ -84,3 +99,19 @@ void Location::setCgiPath(std::string cgiPath)
 {
 	this->cgiPath = cgiPath;
 }
+
+void Location::setReturnCode(int code)
+{
+	this->returnCode = code;	
+}
+
+void Location::setReturnUrl(std::string url)
+{   
+	this->returnUrl = url;
+}
+
+void Location::setAutoIndex(bool flag)
+{
+	this->autoIndex = flag;
+}
+

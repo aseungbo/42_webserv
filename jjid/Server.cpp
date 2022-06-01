@@ -402,11 +402,14 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		std::cout << "write[fd]: " << writeFd[1] << std::endl;
 		return ;
 	}
-	// else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
-	// {
-	// 	// redir
-	// }
-
+	else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
+	{
+		std::cout << "cod::: " << currLocation.getReturnCode() << std::endl; 
+		currResponse.setStatusCode(currLocation.getReturnCode());
+		// TODO: 리다이렉션 정보 
+		// currResponse.setStatusCode(currLocation.getReturnCode())
+		// redir
+	}
 }
 
 int checkPath(std::string &path)
@@ -565,7 +568,7 @@ int Server::serchIndex(std::string &path, Location _currLocation)
 			return ADDED_INDEX;
 		}
 	}
-	setErrorResponse(404);
+	setErrorResponse(404);//??
 	return (ADD_INDEX_FAIL);
 }
 
@@ -697,7 +700,15 @@ void Server::getMethod(int isHead)
 	{
 		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
 			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
+			{
+				std::cout << "auto : " << currLocation.getAutoIndex() << std::endl;
+				if (currLocation.getAutoIndex() == true)
+				{
+					currResponse.setBody("autototototoot");
+					currResponse.setStatusCode(200);
+				}
 				return ;
+			}
 		case _FILE ://해당파일찾아볼것 마찬가지로 없다면 403	
 			openFile(path, isHead);
 			break;

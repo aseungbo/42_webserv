@@ -485,6 +485,9 @@ void WebServer::monitorKqueue()
                     {
                         std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
                         std::cout << "write3" <<std::endl;
+                        std::cout << "msf: " << ResponseMessage << std::endl;
+                        std::cout << "size" << ResponseMessage.size() << std::endl;
+                        std::cout << "curr identttttt: " << curr_event->ident << std::endl;
                         if (write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
                         {
                             printErr("client write err");

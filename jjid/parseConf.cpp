@@ -166,12 +166,23 @@ Location Parser::initLocation()
 {
     Location loc;
 
+    // TODO : init
+    loc.setLocationType(LOCATIONTYPE_NORMAL);
+    loc.setAutoIndex(false);
+        
+    // TODO : map key, value 검증하고 find로 접근해야함. 로직 추가할 것.
     if (locMap.find("extension") != locMap.end())
         loc.setExtension(locMap.find("extension")->second[0]);
     if (locMap.find("cgi") != locMap.end())
     {
         loc.setLocationType(LOCATIONTYPE_CGI);
         loc.setCgiPath(locMap.find("cgi")->second[0]);
+    }
+    if (locMap.find("return") != locMap.end())
+    {
+        loc.setLocationType(LOCATIONTYPE_REDIR);
+        loc.setReturnCode(atoi(locMap.find("return")->second[0].c_str()));    
+        loc.setReturnUrl(locMap.find("return")->second[1]);
     }
     if (locMap.find("path") != locMap.end())
         loc.setPath(locMap.find("path")->second[0]);
@@ -183,6 +194,8 @@ Location Parser::initLocation()
         loc.setErrPage(initErrPage());
     if (locMap.find("limit_except") != locMap.end())
         loc.setAllowMethod(locMap.find("limit_except")->second);
+    if (locMap.find("autoindex") != locMap.end())
+        loc.setAutoIndex(locMap.find("autoindex")->second[0] == "on" ? true : false);
     locMap.clear();
     return (loc);
 }

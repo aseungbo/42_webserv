@@ -12,10 +12,12 @@ class Location
 			std::vector<std::string> index;
 			std::map<std::vector<int>, std::string> errPage;
 			std::vector<std::string> AllowMethod;
-			// bool autoIndex;
+			bool autoIndex;
 			int locationType;
 			std::string extension;
 			std::string cgiPath;
+			int returnCode;
+			std::string returnUrl;
 			
 		public:
 			std::string getRoot();
@@ -26,7 +28,10 @@ class Location
 			int getLocationType();
 			std::string getExtension();
 			std::string getCgiPath();
-			// bool getAutoIndex();
+			bool getAutoIndex();
+			
+			int getReturnCode();
+			std::string getReturnUrl();
 
 			void setRoot(std::string root);
 			void setPath(std::string path);
@@ -36,6 +41,11 @@ class Location
 			void setLocationType(int type);
 			void setExtension(std::string extension);
 			void setCgiPath(std::string cgiPath);
+			
+			void setReturnCode(int code);
+			void setReturnUrl(std::string url);
+			
+			void setAutoIndex(bool flag);
 	};
 
 #endif

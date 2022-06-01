@@ -33,8 +33,8 @@
 #define CHUNKED_FIN 5
 
 #define LOCATIONTYPE_NORMAL 0
-#define LOCATIONTYPE_CGI 1
-#define LOCATIONTYPE_REDIR 2
+#define LOCATIONTYPE_REDIR 1
+#define LOCATIONTYPE_CGI 2
 #define LOCATIONTYPE_CGI_DONE 3
 
 void change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
