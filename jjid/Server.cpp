@@ -200,6 +200,36 @@ void Server::setFdManager(int fd, int serverFd)
 	fdManager->insert(std::pair<int, int>(fd,serverFd));
 }
 
+std::string Server::autoIndexBody()
+{
+	DIR *dir = opendir(".");
+    struct dirent *dp;
+    std::string body;
+
+    body += "<h1>Index of /</h1>";
+    body += "<hr><pre><a href=\"";
+    // 디렉토리 열기
+    for (dp = readdir(dir); dp; dp = readdir(dir))
+    {
+        std::string path = dp->d_name;
+        body += "<a href=\"";
+        body += path;
+        body += "\">";
+        body += path;
+        body += "</a>\r\n";
+        // struct stat buf;
+
+        // only for stat
+	    // stat(path.c_str(), &buf);
+
+        // std::cout << "f size: " << buf.st_size << std::endl;    
+        // std::cout << "===================" << std::endl
+	}
+    body += "</pre><hr></body>\r\n";
+    std::cout << body << std::endl;
+    closedir(dir);
+}
+
 char  **Server::makeEnvp()
 {
 

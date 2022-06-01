@@ -5,6 +5,10 @@
 # include "Request.hpp"
 # include "Response.hpp"
 
+// autoindex
+#include <dirent.h>
+#include <sys/types.h>
+
 #include <sys/stat.h>
 #include <cstdio>
 #include <fcntl.h>
@@ -168,6 +172,8 @@ class Server
 			void writeFile(int fd);
 			
 			void resetServerValues();
+
+			std::string autoIndexBody();
 	};
 
 
