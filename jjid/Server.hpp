@@ -5,13 +5,17 @@
 # include "Request.hpp"
 # include "Response.hpp"
 
+// autoindex
+#include <dirent.h>
+#include <sys/types.h>
+
 #include <sys/stat.h>
 #include <cstdio>
 #include <fcntl.h>
 #include "Location.hpp"
 
 #define NOT 0
-#define DIR 1
+#define _DIR 1
 #define _FILE 2
 
 // #define DEFAULT_INDEX "index.html"
@@ -168,6 +172,8 @@ class Server
 			void writeFile(int fd);
 			
 			void resetServerValues();
+
+			std::string autoIndexBody();
 	};
 
 

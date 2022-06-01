@@ -200,6 +200,37 @@ void Server::setFdManager(int fd, int serverFd)
 	fdManager->insert(std::pair<int, int>(fd,serverFd));
 }
 
+std::string Server::autoIndexBody()
+{
+	DIR *dir = opendir(".");
+    struct dirent *dp;
+    std::string body;
+
+    body += "<h1>Index of /</h1>";
+    body += "<hr><pre><a href=\"";
+    // 디렉토리 열기
+    for (dp = readdir(dir); dp; dp = readdir(dir))
+    {
+        std::string path = dp->d_name;
+        body += "<a href=\"";
+        body += path;
+        body += "\">";
+        body += path;
+        body += "</a>\r\n";
+        // struct stat buf;
+
+        // only for stat
+	    // stat(path.c_str(), &buf);
+
+        // std::cout << "f size: " << buf.st_size << std::endl;    
+        // std::cout << "===================" << std::endl
+	}
+    body += "</pre><hr></body>\r\n";
+    std::cout << body << std::endl;
+    closedir(dir);
+	return (body);
+}
+
 char  **Server::makeEnvp()
 {
 
@@ -424,7 +455,7 @@ int checkPath(std::string &path)
 	if (S_ISDIR(buf.st_mode)) // 테스트해본결과 /로 끝나던 말던 디렉토리면 걍 디렉토리임
 	{
 		path = originPath;
-		return DIR;
+		return _DIR;
 	}
 	else if (S_ISREG(buf.st_mode))
 		return _FILE;
@@ -698,13 +729,13 @@ void Server::getMethod(int isHead)
 	int pathType = checkPath(path);
 	switch (pathType)
 	{
-		case DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
+		case _DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
 			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
 			{
 				std::cout << "auto : " << currLocation.getAutoIndex() << std::endl;
 				if (currLocation.getAutoIndex() == true)
 				{
-					currResponse.setBody("autototototoot");
+					currResponse.setBody(autoIndexBody());
 					currResponse.setStatusCode(200);
 				}
 				return ;
@@ -757,7 +788,7 @@ void Server::postMethod()
 
 	int fd;
 	std::cout << "post result:" << path << std::endl;
-	if (pathType == _FILE || pathType == DIR)
+	if (pathType == _FILE || pathType == _DIR)
 	{
 		std::cout << "file " << std::endl;
 		if ((fd = open(path.c_str(), O_WRONLY | O_APPEND | O_NONBLOCK, 0644)) == -1)
@@ -772,7 +803,7 @@ void Server::postMethod()
 		if ((fd = open(path.c_str(), O_WRONLY | O_CREAT | O_NONBLOCK, 0644)) == -1)
 			return (setErrorResponse(500));
 	}
-	else if (pathType == DIR)
+	else if (pathType == _DIR)
 	{   
 		std::cout << "dir " << std::endl;
 		return (setErrorResponse(403));
