@@ -4,6 +4,11 @@
 # include "uniHeader.hpp"
 // # include "Server.hpp"
 
+#define LOCATIONTYPE_NORMAL 0
+#define LOCATIONTYPE_REDIR 1
+#define LOCATIONTYPE_CGI 2
+#define LOCATIONTYPE_CGI_DONE 3
+
 class Location
 	{
 		private:
@@ -20,6 +25,8 @@ class Location
 			std::string returnUrl;
 			
 		public:
+			Location(void);
+
 			std::string getRoot();
 			std::string getPath();
 			std::vector<std::string> getIndex();
