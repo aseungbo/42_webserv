@@ -228,9 +228,9 @@ void WebServer::monitorKqueue()
                     fcntl(clientSocket, F_SETFL, O_NONBLOCK);
 
                     change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                    change_events(change_list, clientSocket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                    // change_events(change_list, clientSocket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clients[clientSocket] = "";
-                    clientsServerMap[clientSocket] = serverSocket;
+                    clientsServerMap[clientSocket] = serverSocket;   
                 }
                 else if (clients.find(curr_event->ident) != clients.end())
                 {
@@ -238,11 +238,12 @@ void WebServer::monitorKqueue()
                     char buf[1024];
                     memset(buf,0,1024);
                     int n = read(curr_event->ident, buf, sizeof(buf) - 1);
+                    std::cout << "[ after read ]" << std::endl;
                     if (n <= 0)
                     {
                         if (n < 0)
                             printErr("client read error!");
-                        std::cout << "read:diconnetc call" <<std::endl;
+                        std::cout << "read:diconnect call" <<std::endl;
                         // serverMap[clientsServerMap[curr_event->ident]].setStatus(READY);
                         disconnect_client(curr_event->ident, clients, clientsServerMap);
                     }
@@ -346,7 +347,10 @@ void WebServer::monitorKqueue()
                                 }
                             }
                             else
+                            {
                                 currSever.setStatus(DONE);
+                                change_events(change_list, curr_event->i, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            }
                         }
                         
                     }
