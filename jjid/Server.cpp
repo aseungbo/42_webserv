@@ -208,7 +208,8 @@ std::string Server::autoIndexBody()
 	DIR *dir = opendir(currRequest.getStartLine().path.c_str());
     struct dirent *dp;
 
-    body += "<h1>Index of /</h1><hr><pre><a href=\"";
+	std::cout << "[ Curr path ]" << currRequest.getStartLine().path << std::endl;
+    body += "<h1>Index of /</h1><hr><pre>";
     for (dp = readdir(dir); dp; dp = readdir(dir))
     {
         std::string name = dp->d_name;
