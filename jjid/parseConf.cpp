@@ -252,7 +252,6 @@ void    Parser::parseKeyValue(std::string content)
         {
             if (checkCommentAndBlank(contSplit[i]))
                 i++;
-            std::cout << contSplit[i] << std::endl;
             if (contSplit[i].find("location") != std::string::npos)
             {
                 parseLocPath(contSplit[i]);
