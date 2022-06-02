@@ -202,31 +202,26 @@ void Server::setFdManager(int fd, int serverFd)
 
 std::string Server::autoIndexBody()
 {
-	DIR *dir = opendir(".");
+    std::string body = "";
+	
+	// 예외처리 고려
+	DIR *dir = opendir(currRequest.getStartLine().path.c_str());
     struct dirent *dp;
-    std::string body;
 
-    body += "<h1>Index of /</h1>";
-    body += "<hr><pre><a href=\"";
-    // 디렉토리 열기
+    body += "<h1>Index of /</h1><hr><pre><a href=\"";
     for (dp = readdir(dir); dp; dp = readdir(dir))
     {
-        std::string path = dp->d_name;
-        body += "<a href=\"";
-        body += path;
-        body += "\">";
-        body += path;
-        body += "</a>\r\n";
-        // struct stat buf;
+        std::string name = dp->d_name;
+		std::string cont;
+		struct stat buf;
 
-        // only for stat
-	    // stat(path.c_str(), &buf);
-
-        // std::cout << "f size: " << buf.st_size << std::endl;    
-        // std::cout << "===================" << std::endl
+		stat(name.c_str(), &buf);
+		if (S_ISDIR(buf.st_mode))
+			name += "/";
+        cont = "<a href=\"" + name + "\">" + name + "</a>\r\n";
+		body += cont;
 	}
     body += "</pre><hr></body>\r\n";
-    std::cout << body << std::endl;
     closedir(dir);
 	return (body);
 }
