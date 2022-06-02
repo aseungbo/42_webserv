@@ -209,6 +209,7 @@ void WebServer::monitorKqueue()
                         std::cout << "204 type:" << currServer.getCurrLocation().getLocationType()<<std::endl;;
                         std::map <std::string, std::string>::iterator findIter = currServer.getRequestClass().getHeader().getContent().find("Content-Length");
                         currServer.setStatus(DONE);
+                        change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
                         if (findIter != currServer.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                             findIter->second = std::to_string(currServer.getRequestClass().getBody().size());
                         fdManager.erase(curr_event->ident);
@@ -349,7 +350,7 @@ void WebServer::monitorKqueue()
                             else
                             {
                                 currSever.setStatus(DONE);
-                                change_events(change_list, curr_event->i, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
                         }
                         

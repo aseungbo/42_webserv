@@ -1,6 +1,13 @@
 #include "Location.hpp"
 #include "uniHeader.hpp"
 
+Location::Location(void)
+{
+    setLocationType(LOCATIONTYPE_NORMAL);
+    setAutoIndex(false);
+	setReturnCode(0);
+}
+
 std::string Location::getRoot()
 {
  return (root);
@@ -35,10 +42,6 @@ std::string Location::getExtension()
 {
 	return (extension);
 }
-// // bool getAutoIndex()
-// {
-//  return (AutoIndex);
-// }
 
 std::string Location::getCgiPath()
 {
@@ -114,4 +117,3 @@ void Location::setAutoIndex(bool flag)
 {
 	this->autoIndex = flag;
 }
-

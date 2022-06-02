@@ -176,11 +176,11 @@ void Parser::parseAllowMethod(std::string currLine)
 
 Location Parser::initLocation()
 {
-    Location loc;
+    Location loc = Location();
 
-    // TODO : init
-    loc.setLocationType(LOCATIONTYPE_NORMAL);
-    loc.setAutoIndex(false);
+    // // TODO : init
+    // loc.setLocationType(LOCATIONTYPE_NORMAL);
+    // loc.setAutoIndex(false);
         
     // TODO : map key, value 검증하고 find로 접근해야함. 로직 추가할 것.
     if (locMap.find("extension") != locMap.end())
@@ -193,7 +193,7 @@ Location Parser::initLocation()
     if (locMap.find("return") != locMap.end())
     {
         loc.setLocationType(LOCATIONTYPE_REDIR);
-        loc.setReturnCode(atoi(locMap.find("return")->second[0].c_str()));    
+        loc.setReturnCode(atoi(locMap.find("return")->second[0].c_str())); 
         loc.setReturnUrl(locMap.find("return")->second[1]);
     }
     if (locMap.find("path") != locMap.end())
