@@ -17,6 +17,7 @@ class Parser
 
 		public : 
 			// Parser();
+            int checkCommentAndBlank(std::string currLine);
             void openConfigfile(std::string confPath);
             std::vector<std::string> parseServerBlock(std::string config);
             void parseCurrLine(std::string currLine);

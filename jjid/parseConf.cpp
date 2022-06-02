@@ -108,6 +108,18 @@ std::vector<std::string> Parser::parseServerBlock(std::string config)
     return (blockVec);
 }
 
+int     Parser::checkCommentAndBlank(std::string currLine)
+{
+    if (currLine.size() == 0)
+        return 1;
+    std::vector<std::string> lineSplit = splitCurrLine(currLine);
+    if (lineSplit.size() == 0)
+        return 1;
+    else if (lineSplit[0].find("#") != std::string::npos)
+        return 1;
+    return 0;
+}
+
 void    Parser::parseLocPath(std::string currLine)
 {
     std::string temp = currLine;
@@ -238,6 +250,9 @@ void    Parser::parseKeyValue(std::string content)
     {   
         try
         {
+            if (checkCommentAndBlank(contSplit[i]))
+                i++;
+            std::cout << contSplit[i] << std::endl;
             if (contSplit[i].find("location") != std::string::npos)
             {
                 parseLocPath(contSplit[i]);
@@ -287,21 +302,6 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             serv.setLocation(locations);
         serv.setStatus(READY);
         serv.getResponseClass().setStatusCode(0);
-        // only for TEST
-        // std::cout << "serv root: " << serv.getRoot() << std::endl;
-        // std::cout << "serv name: " << serv.getHost()[0]<< std::endl;
-        // std::cout << "serv name: " << serv.getHost()[1]<< std::endl;
-        // std::cout << "serv listen: " << serv.getPort()<< std::endl;
-        // std::cout << "serv client body: " << serv.getClientBodySize() << std::endl;
-        // std::cout << "serv index: " << serv.getIndex()[0] << std::endl;
-        // std::cout << "serv index: " << serv.getIndex()[1] << std::endl;
-        // std::cout << "serv err page: " << serv.getErrPage().begin()->first[0] << std::endl;
-        // std::cout << "serv err page: " << serv.getErrPage().begin()->second << std::endl;
-        // std::cout << "serv allow func: " << serv.getAllowMethod()[0] << std::endl;
-        // std::cout << "serv allow func: " << serv.getAllowMethod()[1] << std::endl;
-        // std::cout << "serv loca: " << serv.getLocations().begin()->getAllowMethod()[0] << std::endl;
-        // std::cout << "serv loca: " << serv.getLocations().begin()->getAllowMethod()[1] << std::endl;
-        // std::cout << "serv loc path: " << serv.getLocations().begin()->getPath() << std::endl;
         servers.push_back(serv);
     }
     locations.clear();
