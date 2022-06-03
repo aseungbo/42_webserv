@@ -94,16 +94,22 @@ void Request::clearRequest()
 {
 	extension.clear();
 	startline.http.clear();
-	startline.method = 0;
+	startline.method = -1;
 	startline.path.clear();
 	body.clear();
 	cgi = 0;
 	header.getContent().clear();
 }
-void Request::parseRequestMessage(std::string requestMessage)
+void Request::parseRequestMessage(std::string requestMessage, int serverStatus)
 {
 	if (requestMessage.size() == 0)
 		return ;
+	if (serverStatus == CHUNKED_SERVER)
+	{
+		std::cout << "chunk return" << std::endl;
+		body = requestMessage;
+		return ;
+	}
 	clearRequest();
 	std::cout <<"<" << requestMessage << ">"<<std::endl ;
 	// std::cout << requestMessage << std::endl;
@@ -112,7 +118,9 @@ void Request::parseRequestMessage(std::string requestMessage)
 		std::vector<std::string> parseRequest = splitRequestMessage(requestMessage, '\n');
 		//맨마지막은 '\n'
 		if (parseRequest.size() > 0)
+			{std::cout << "startline ::: " <<parseRequest[0] <<std::endl; 
 			initStartLine(parseRequest[0]);	
+			}
 		else
 			return (printErr("no requset"));
 		std::vector<std::string>::iterator iter = parseRequest.begin() + 1;

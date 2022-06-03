@@ -261,6 +261,7 @@ void WebServer::monitorKqueue()
                         {
                             if (currSever.getStatus() == CHUNKED || currSever.getStatus() == CHUNKED_DONE)
                             {
+                                std::cout << "[ Serv status ]" << currSever.getStatus() << std::endl;
                                 std::cout << "ident : " << clients[curr_event->ident]  << std::endl;
                                 int findIdx = clients[curr_event->ident].find("\r\n");
                                 std::string firstLine = clients[curr_event->ident].substr(0, findIdx+2);
@@ -271,7 +272,8 @@ void WebServer::monitorKqueue()
                                 {
                                     std::cout << "chunked fin " << std::endl;
                                     currSever.setStatus(CHUNKED_FIN);
-                                    continue ;
+                                    change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
+                                    break ;
                                 }
                                 std::cout <<"origin :" << clients[curr_event->ident] <<std::endl;
                                 clients[curr_event->ident].erase(0, findIdx+2);
@@ -305,16 +307,21 @@ void WebServer::monitorKqueue()
                         }
                         else if (clients[curr_event->ident].find("\r\n\r\n") != std::string::npos)
                         {   
-                            currSever.getRequestClass().parseRequestMessage(clients[curr_event->ident]);
+                            if (currSever.getStatus() == CHUNKED_FIN)
+                            {
+                                currSever.getResponseClass().setStatusCode(405);
+                                break ;                          
+                            }
+                            currSever.getRequestClass().parseRequestMessage(clients[curr_event->ident] , currSever.getStatus());
                             // std::cout << "body 1024 under : " << clients[curr_event->ident] << std::endl;
                             std::cout << "body 1024 under : " << currSever.getRequestClass().getBody() << std::endl;
                             std::map <std::string, std::string>::iterator chunkedIter = currSever.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
                             clients[curr_event->ident] = "";
-                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end())
-                                for (int i = 0 ; i < chunkedIter->second.size() ; i++)
-                                    printf("c:%d\n",chunkedIter->second[i]);
-                                // std::cout << "|" << chunkedIter->second<< "|" <<std::endl;
-                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked\r")
+                            // if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end())
+                            //     for (int i = 0 ; i < chunkedIter->second.size() ; i++)
+                            //         printf("c:%d\n",chunkedIter->second[i]);
+                            // std::cout << "|" << chunkedIter->second<< "|" <<std::endl;
+                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
                             {
                                 std::cout << "chuenkkkkkkk\n";
                                 if (currSever.getRequestClass().getBody().size() <= 0)
@@ -330,6 +337,7 @@ void WebServer::monitorKqueue()
                                     {
                                         std::cout << "chunked fin " << std::endl;
                                         currSever.setStatus(CHUNKED_FIN);
+                                        change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
                                         continue ;
                                     }
                                     std::cout <<"origin :" << currSever.getRequestClass().getBody() <<std::endl;
@@ -349,6 +357,7 @@ void WebServer::monitorKqueue()
                             }
                             else
                             {
+                                
                                 currSever.setStatus(DONE);
                                 change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
@@ -459,7 +468,6 @@ void WebServer::monitorKqueue()
                     {
                         std::cout << "2\n";
                         std::map <std::string, std::string>::iterator findIter = currSever.getRequestClass().getHeader().getContent().find("Content-Length");
-                        
                         if (findIter != currSever.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                         {   
                             std::cout << "3\n";
@@ -475,12 +483,14 @@ void WebServer::monitorKqueue()
                         else//못찾았을때인데 헤더파싱은 끝나야함
                         {
                             serverMap[clientsServerMap[curr_event->ident]].preProcess();
+                            
                             serverMap[clientsServerMap[curr_event->ident]].processMethod(change_list);
                             currSever.setStatus(READY);
                         }
                     }
                     else if (currSever.getStatus() == CHUNKED_FIN)
                     {
+                        std::cout << "chunked fin check" <<std::endl;
                         serverMap[clientsServerMap[curr_event->ident]].preProcess();
                         serverMap[clientsServerMap[curr_event->ident]].processMethod(change_list);
                         currSever.setStatus(READY);

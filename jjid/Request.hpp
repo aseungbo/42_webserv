@@ -4,6 +4,8 @@
 # include "uniHeader.hpp"
 # include "RequestHeader.hpp"
 # include <sstream> // istringstream
+
+#define CHUNKED_SERVER 2
 	
 typedef struct s_StartLine
 {
@@ -27,7 +29,8 @@ class Request
 		void initStartLine(const std::string &str);
 		int methodToNum(const std::string& str);
 		std::pair <std::string, std::string> initRequestHeader(const std::string header);
-		void parseRequestMessage(std::string requestMessage);
+		// void parseRequestMessage(std::string requestMessage);
+		void parseRequestMessage(std::string requestMessage, int serverStatus);
 
 		t_StartLine getStartLine();
 		Header& getHeader();

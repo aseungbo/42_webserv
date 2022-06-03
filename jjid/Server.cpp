@@ -362,6 +362,7 @@ void Server::preProcess()
 	// this->currResponse.setBody("");
 	// this->currResponse.setStatusCode(0);
 	// this->currResponse.setHeader(0);
+	std::cout << "preprocessMethod :: "<<currRequest.getStartLine().method <<std::endl;
 	std::string pathTmp = currRequest.getStartLine().path;
 	std::cout << "ori pathTmp: "<< pathTmp << std::endl;
 	currLocation = whereIsLocation(pathTmp);
@@ -371,6 +372,7 @@ void Server::preProcess()
 	std::cout << "pathTmp: "<< pathTmp << std::endl;
 	std::cout << "path2: "<< currRequest.getStartLine().path << std::endl;
 	std::cout << "prepro :: " << currLocation.getLocationType()  <<std::endl;
+	std::cout << "****prepro after :: "<<currRequest.getBody() <<std::endl;
 }
 
 // int Server::checkMethod()
@@ -391,6 +393,8 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 	// aliasRoot(currLocation, path);
 	// checkPath(path);
 	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
+	
+	std::cout << "processMethod :: "<<currRequest.getStartLine().method <<std::endl;
 	std::cout << "pro :: " << currLocation.getLocationType()  <<std::endl;
 	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL || currLocation.getLocationType() == LOCATIONTYPE_CGI_DONE)
 	{
@@ -775,7 +779,7 @@ void Server::postMethod()
 	
 	
 	// path = "." + path;//root 키워드로 설정하기 설정 없다면 디폴트로 추가하기, 절대경로로 바꿀것 // 서버의 루트 먼저 붙이고 로케이션 붙이기
-	
+	std::cout << "postmethod :: "<<currRequest.getBody() <<std::endl;
 	std::string path = this->currRequest.getStartLine().path;
 	int pathType = checkPath(path);
 	//TODO serchIndex 인자값으로 해당 메소드 넘겨줘서 겟이면 바꾸고 포스트면 안바꾸고로 수정필요
@@ -834,6 +838,7 @@ void Server::deleteMethod()
 
 void Server::resetServerValues()
 {
+	getResponseClass().setBody("");
 	getResponseClass().setBody("");
 	getResponseClass().setStatusCode(0);
 	getResponseClass().getHeader().getContent().clear();
