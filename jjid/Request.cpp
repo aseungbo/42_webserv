@@ -115,11 +115,13 @@ void Request::parseRequestMessage(std::string requestMessage)
 			initStartLine(parseRequest[0]);	
 		else
 			return (printErr("no requset"));
-		std::vector<std::string>::iterator iter = parseRequest.begin() + 1;
+		std::vector<std::string>::iterator iter = parseRequest.begin() + 1; // jji : 찝찝
 		for (; (*iter) != "\r" && iter != parseRequest.end(); iter++)
 			header.getContent().insert(initRequestHeader(*iter));
 		if (requestMessage.size() >= requestMessage.find("\r\n\r\n") + 4)
-			body = requestMessage.substr(requestMessage.find("\r\n\r\n")+4);
+			body = requestMessage.substr(requestMessage.find("\r\n\r\n") + 4);
+		std::cout << "in parse body:" << body <<std::endl;
+		std::cout << "in parse getbody:" << getBody() <<std::endl;
 		
 		// for (; iter != parseRequest.end(); iter++)
 		// 	if (iter != parseRequest.end() -1 )

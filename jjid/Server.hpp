@@ -172,6 +172,8 @@ class Server
 			void writeFile(int fd);
 			
 			void resetServerValues();
+			
+			void parseChunkedBody();
 
 			std::string autoIndexBody();
 	};

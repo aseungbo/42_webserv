@@ -227,7 +227,7 @@ void WebServer::monitorKqueue()
                         usleep(10);
                     }
                     fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-
+                    std::cout << "new accept : "<< clientSocket <<  std::endl;
                     change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     // change_events(change_list, clientSocket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clients[clientSocket] = "";
@@ -250,108 +250,60 @@ void WebServer::monitorKqueue()
                     }
                     else
                     {
+                        std::cout << "after read n:" << n <<"fd:: " << curr_event->ident<< std::endl;
                         buf[n] = '\0';
                         clients[curr_event->ident] += buf;
-                        Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
+                        Server &currSever = serverMap[clientsServerMap[curr_event->ident]];//TODO::  청크드 로직에서 메세지의 끝은 rn 인데 우리는 rn이고 뭐고 그냥 때려 넣음
                         if (currSever.getStatus() == DONE)
                         {
+                            std::cout << "done add body if"<< std::endl;
+                            std::cout << "done add body if  before:" << currSever.getRequestClass().getBody()<< std::endl;
                             currSever.getRequestClass().addBody(buf);
+                            std::cout << "done add body if  after:" <<currSever.getRequestClass().getBody()<< std::endl;
                         }
-                        else if (currSever.getStatus() == CHUNKED || currSever.getStatus() == CHUNKED_ALIVE || currSever.getStatus() == CHUNKED_DONE)
+                        else if (currSever.getStatus() == CHUNKED)
                         {
-                            if (currSever.getStatus() == CHUNKED || currSever.getStatus() == CHUNKED_DONE)
+                            static int i = 0;
+                            std::cout << i++ << std::endl;
+                            std::cout << "cunked else if"<< std::endl;
+                            currSever.getRequestClass().addBody(clients[curr_event->ident]);
+                            clients[curr_event->ident] = "";
+                            if ( currSever.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
                             {
-                                std::cout << "ident : " << clients[curr_event->ident]  << std::endl;
-                                int findIdx = clients[curr_event->ident].find("\r\n");
-                                std::string firstLine = clients[curr_event->ident].substr(0, findIdx+2);
-                                long chunkedSize = std::strtol(firstLine.c_str(), NULL, 16);
-                                std::cout << "chunkedSize : " << chunkedSize  << std::endl;
-                                currSever.setChunkedSize(chunkedSize);
-                                if (chunkedSize == 0)
-                                {
-                                    std::cout << "chunked fin " << std::endl;
-                                    currSever.setStatus(CHUNKED_FIN);
-                                    continue ;
-                                }
-                                std::cout <<"origin :" << clients[curr_event->ident] <<std::endl;
-                                clients[curr_event->ident].erase(0, findIdx+2);
-                                std::cout <<"sub :" << clients[curr_event->ident] <<std::endl;
-                                // for (int i = 0 ; i <clients[curr_event->ident].size();i++ )
-                                //     printf("c: %d\n",clients[curr_event->ident][i]);
-                                currSever.getRequestClass().addBody(clients[curr_event->ident]);
-                                // int currSize = clients[curr_event->ident].size();
-                                // currSever.setCurrChunkedSize(currSize);
-                                clients[curr_event->ident] = "";
-                                // if (chunkedSize == currSize)//한방에 끝남?
-                                std::cout << "body size1 :::"  << currSever.getRequestClass().getBody().size() << std::endl;
-                                std::cout << "chubnke size1 :::"  << currSever.getChunkedSize() << std::endl;
-                                if (chunkedSize == currSever.getRequestClass().getBody().size())
-                                {
-                                    currSever.setStatus(CHUNKED_DONE);
-                                }
-                                else
-                                    currSever.setStatus(CHUNKED_ALIVE);
+                                // 바디 rn기준으로 잘라넣을 거 추가;
+                                currSever.parseChunkedBody();
+                                currSever.setStatus(CHUNKED_FIN);
+                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
-                            else if (currSever.getStatus() == CHUNKED_ALIVE)
-                            {
-                                std::cout << " allive" << std::endl;
-                                currSever.getRequestClass().addBody(clients[curr_event->ident].substr(0,clients[curr_event->ident].find("\r\n")));
-                                std::cout << "body size2 :::"  << currSever.getRequestClass().getBody().size() << std::endl;
-                                std::cout << "chubnke size2 :::"  << currSever.getChunkedSize() << std::endl;
-                                clients[curr_event->ident] = "";
-                                if (currSever.getChunkedSize() == currSever.getRequestClass().getBody().size())
-                                    currSever.setStatus(CHUNKED_DONE);
-                            }
+                            else
+                                currSever.setStatus(CHUNKED);
                         }
                         else if (clients[curr_event->ident].find("\r\n\r\n") != std::string::npos)
-                        {   
+                        {
+                            std::cout << "header if "<< std::endl;
                             currSever.getRequestClass().parseRequestMessage(clients[curr_event->ident]);
                             // std::cout << "body 1024 under : " << clients[curr_event->ident] << std::endl;
-                            std::cout << "body 1024 under : " << currSever.getRequestClass().getBody() << std::endl;
+                            std::cout << "body 1024 under :" << currSever.getRequestClass().getBody() << ")"<< std::endl;
                             std::map <std::string, std::string>::iterator chunkedIter = currSever.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
                             clients[curr_event->ident] = "";
-                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end())
-                                for (int i = 0 ; i < chunkedIter->second.size() ; i++)
-                                    printf("c:%d\n",chunkedIter->second[i]);
-                                // std::cout << "|" << chunkedIter->second<< "|" <<std::endl;
-                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked\r")
+                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
                             {
-                                std::cout << "chuenkkkkkkk\n";
-                                if (currSever.getRequestClass().getBody().size() <= 0)
-                                    currSever.setStatus(CHUNKED);
-                                else//바디사이즈가 0 이상이면 청크드 정보 저장 이랑  첫줄날리고 청크드가아니라 청크드 던
+                                if(currSever.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
                                 {
-                                    int findIdx = currSever.getRequestClass().getBody().find("\r\n");
-                                    std::string firstLine = currSever.getRequestClass().getBody().substr(0, findIdx);
-                                    long chunkedSize = std::strtol(firstLine.c_str(), NULL, 16);
-                                    std::cout << "chunkedSize : " << chunkedSize  << std::endl;
-                                    currSever.setChunkedSize(chunkedSize);
-                                    if (chunkedSize == 0)
-                                    {
-                                        std::cout << "chunked fin " << std::endl;
-                                        currSever.setStatus(CHUNKED_FIN);
-                                        continue ;
-                                    }
-                                    std::cout <<"origin :" << currSever.getRequestClass().getBody() <<std::endl;
-                                    std::string tmpBody = currSever.getRequestClass().getBody();
-                                    currSever.getRequestClass().setBody(tmpBody.erase(0,findIdx+2));
-                                    std::cout <<"sub :" << currSever.getRequestClass().getBody() <<std::endl;
-                                    // currSever.getRequestClass().addBody(currSever.getRequestClass().getBody());
-                                    int currSize = currSever.getRequestClass().getBody().size();
-                                    currSever.setCurrChunkedSize(currSize);
-                                    std::cout << "body size3 :::"  << currSize << std::endl;
-                                    std::cout << "chubnke size3 :::"  << chunkedSize << std::endl;
-                                    if (chunkedSize == currSize)//한방에 끝남?
-                                        currSever.setStatus(CHUNKED_DONE);
-                                    else
-                                        currSever.setStatus(CHUNKED_ALIVE);
+                                    // 바디 rn기준으로 잘라넣을 거 추가;
+                                    currSever.parseChunkedBody();
+                                    currSever.setStatus(CHUNKED_FIN);
+                                    change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                                 }
+                                else
+                                    currSever.setStatus(CHUNKED);
                             }
                             else
                             {
                                 currSever.setStatus(DONE);
                                 change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
+
                         }
                         
                     }
@@ -454,7 +406,7 @@ void WebServer::monitorKqueue()
                 {
                     Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
 
-                //  std::cout << "1\n";   
+                 std::cout << currSever.getStatus() <<std::endl;
                     if (currSever.getStatus() == DONE)
                     {
                         std::cout << "2\n";
@@ -481,6 +433,7 @@ void WebServer::monitorKqueue()
                     }
                     else if (currSever.getStatus() == CHUNKED_FIN)
                     {
+                        std::cout << "청크드 핀"<<std::endl;
                         serverMap[clientsServerMap[curr_event->ident]].preProcess();
                         serverMap[clientsServerMap[curr_event->ident]].processMethod(change_list);
                         currSever.setStatus(READY);

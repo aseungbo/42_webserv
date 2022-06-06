@@ -853,6 +853,24 @@ void Server::resetServerValues()
 	// TODO fdFlag 초기화?
 
 }
+void Server::parseChunkedBody()
+{
+	int idx = 0;
+	int cunkeSize = 0;
+	std::string orginBody = getRequestClass().getBody();
+	std::string resultBody;
+	// for (int idx = 0 ; idx < orginBody.size();)
+	while (idx < orginBody.size())
+	{
+		int find = orginBody.find("\r\n", idx);
+		cunkeSize = std::strtol(orginBody.substr(idx, find).c_str(), NULL, 16);
+		if (cunkeSize == 0)//|| npos
+			break;
+		resultBody += orginBody.substr(find + 2, find + 2 + chunkedSize);
+		idx = find + 2 + chunkedSize;
+	}
+	getRequestClass().setBody(resultBody);
+}
 // void Server::headMethod()
 // {
 		
