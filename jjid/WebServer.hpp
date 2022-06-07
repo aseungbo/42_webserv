@@ -25,6 +25,7 @@ class WebServer
 			void listenServers();//서버들 리슨 바인드 까지
 			void mapFd(); // servers 시작 -> serverFd; -> serverMap
 			void monitorKqueue(); //->안의 기능은 따로 뺄예정
+			bool checkLastChunked(std::string const &str);
 	};
 
 #endif
