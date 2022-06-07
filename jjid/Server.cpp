@@ -277,6 +277,7 @@ char  **Server::makeEnvp()
 	// std::cout << "~~~ "<< currRequest.getHeader().getContent().find("Content-Length")->second << std::endl;
 	// std::cout << currRequest.getBody().size() << std::endl;
 	
+	currRequest.getHeader().getContent().find("Content-Length");
 	temp = "CONTENT_LENGTH=" + currRequest.getHeader().getContent().find("Content-Length")->second;
 	// std::cout << "jjibal0"<<temp<<std::endl;
 	result[3] = new char[temp.size() + 1];
@@ -353,8 +354,34 @@ char  **Server::makeEnvp()
 // 	change_events(change_list, readFd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 // 	change_events(change_list, readFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 // }
+bool Server::cgiLocation(std::string const &path)
+{
+	std::vector < Location > locationVector = this->getLocations();
+	Location tmpLocation;
+	for (int idx = 0 ; idx < locationVector.size(); idx++)
+	{	
+		if (!locationVector[idx].getExtension().empty())// TODO 앞에 path 까지 확인하는거 추가 필요
+		{
+			std::string findPath = locationVector[idx].getPath();
+			// if (findPath.size() > 1 && findPath[findPath.size()-1] == '/')
+			// {
+			// 	findPath.erase(findPath.size() - 1);
+			// 	std::cout << "findpath erase : " << findPath << std::endl;
+			// }
+			if(getRequestClass().getExtension() == locationVector[idx].getExtension() && path.find(findPath) == 0)
+			{
+				currLocation = locationVector[idx];
+				
+				return (true);
 
-void Server::preProcess()
+			}
+		}
+	}
+	return (false);
+		
+}
+
+void Server::preProcess(int type)
 {
     //allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
 	//isAllowMethod();
@@ -364,6 +391,9 @@ void Server::preProcess()
 	// this->currResponse.setHeader(0);
 	std::string pathTmp = currRequest.getStartLine().path;
 	std::cout << "ori pathTmp: "<< pathTmp << std::endl;
+	if (type != LOCATIONTYPE_CGI_DONE)
+		if (cgiLocation(pathTmp))
+			return ;
 	currLocation = whereIsLocation(pathTmp);
 	aliasRoot(currLocation, pathTmp);
 	checkPath(pathTmp);
@@ -391,7 +421,13 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 	// aliasRoot(currLocation, path);
 	// checkPath(path);
 	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
-	std::cout << "pro :: " << currLocation.getLocationType()  <<std::endl;
+	std::cout << "pro :: " << currLocation.getLocationType() << std::endl;
+	if (currLocation.getLocationType() == LOCATIONTYPE_CGI && getRequestClass().getBody().empty())
+	{
+		std::cout << "cgi body 000000000" <<std::endl;
+		currLocation.setLocationType(LOCATIONTYPE_CGI_DONE);
+		preProcess(LOCATIONTYPE_CGI_DONE);
+	}
 	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL || currLocation.getLocationType() == LOCATIONTYPE_CGI_DONE)
 	{
 		std::cout << "nomal !\n";
@@ -481,6 +517,7 @@ Location Server::getDefaultLocation()
 Location Server::whereIsLocation(std::string const & path)
 {
 	std::vector < Location > locationVector = this->getLocations();
+	Location tmpLocation;
 	
 	for (int idx = 0 ; idx < locationVector.size(); idx++)
 	{
@@ -490,8 +527,12 @@ Location Server::whereIsLocation(std::string const & path)
 			findPath.erase(findPath.size() - 1);
 			std::cout << "findpath erase : " << findPath << std::endl;
 		}
+		
 		if (path.find(findPath) == 0)
 		{
+			if (locationVector[idx].getExtension().empty())
+				return (locationVector[idx]);
+				
 			// std::cout << "checkechekcek" <<std::endl;
 			// if (locationVector[idx].getExtension().empty())//확장자가 없으면
 			// {
@@ -502,7 +543,7 @@ Location Server::whereIsLocation(std::string const & path)
 			// else if (locationVector[idx].getExtension() == currRequest.getExtension())
 			// {
 			// 	std::cout << "req exten:"<< currRequest.getExtension() <<std::endl;
-				return (locationVector[idx]);
+			// }
 			// }
 		}
 	}

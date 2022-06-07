@@ -82,6 +82,7 @@ class Server
 			pid_t cgiPid;
 			
 			char **envp;
+			
 		public:
 
 		char  **makeEnvp();
@@ -145,6 +146,7 @@ class Server
 			
 			
 			void setErrorResponse(int statusCode);
+			bool cgiLocation(std::string const &path);
 			
 			// int *getCgiWriteFd();
 			// int *getCgiReadFd();
@@ -158,7 +160,7 @@ class Server
 			
 			
 			
-			void preProcess();
+			void preProcess(int type);
 			int checkMethod();
 			Location &getCurrLocation();
 			void setCgiEvent(std::vector <struct kevent> &change_list);
