@@ -143,6 +143,7 @@ void    Parser::parseLocPath(std::string currLine)
         start = temp.find("/");
         end = temp.find(" ", start);
     }
+    std::cout << "temp: " << temp.substr(start, end - start) << std::endl;
     path.push_back(temp.substr(start, end - start));
     if (locMap.find(key) == locMap.end())
         locMap.insert(std::pair<std::string, std::vector<std::string> >(key, path));
@@ -251,7 +252,7 @@ void    Parser::parseKeyValue(std::string content)
         try
         {
             if (checkCommentAndBlank(contSplit[i]))
-                i++;
+                continue ;
             if (contSplit[i].find("location") != std::string::npos)
             {
                 parseLocPath(contSplit[i]);
