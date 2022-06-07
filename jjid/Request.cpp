@@ -18,9 +18,10 @@ std::vector<std::string> Request::splitRequestMessage(std::string str, char deli
     return result;
 }
 
-void Request::addBody(std::string str)
+void Request::addBody(std::string& str)
 {
-	body += str;
+	body.append(str);
+	// body += str;
 }
 
 void Request::setBody(std::string str)

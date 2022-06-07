@@ -34,7 +34,7 @@ class Request
 		std::string getBody();
 		std::string getExtension();
 
-		void addBody(std::string str);
+		void addBody(std::string& str);
 		void setBody(std::string str);
 		void setPath(std::string str)
 		{
