@@ -5,6 +5,8 @@
 			// std::string confPath;
 			// std::map < int, Server > serverMap; // 서버에서 뭘 받아온다면 다시 고려 
 			// // EventHandler // 언젠가 꼭 고려해보쟈 ><
+			
+			std::vector<std::string > makeChunkedVec(std::string originStr);
 
 int checkArg(int ac, char **av, std::string& confPath)
 {
@@ -183,81 +185,7 @@ void WebServer::monitorKqueue()
                 // map indexing으로 접근 가능한지 확인해볼 것
                 //TODO : 어떤서버에 연결할지 함수로 만들었으면 좋겠다.
                 // std::map<int, Server>::iterator serverMap.find(curr_event->ident) = ;
-                if (clients.find(curr_event->ident) != clients.end())
-                {
-                    // parse request
-                    char buf[65536];
-                    memset(buf,0,65536);
-                    int n = read(curr_event->ident, buf, sizeof(buf) - 1);
-                    // std::cout << "[ after read ]" << std::endl;
-                    if (n <= 0)
-                    {
-                        if (n < 0)
-                            printErr("client read error!");
-                        std::cout << "read:diconnect call" <<std::endl;
-                        // serverMap[clientsServerMap[curr_event->ident]].setStatus(READY);
-                        disconnect_client(curr_event->ident, clients, clientsServerMap);
-                    }
-                    else
-                    {
-                        // std::cout << "after read n:" << n <<"fd:: " << curr_event->ident<< std::endl;
-                        buf[n] = '\0';
-                        clients[curr_event->ident] += buf;
-                        Server &currSever = serverMap[clientsServerMap[curr_event->ident]];//TODO::  청크드 로직에서 메세지의 끝은 rn 인데 우리는 rn이고 뭐고 그냥 때려 넣음
-                        if (currSever.getStatus() == DONE)
-                        {
-                            // std::cout << "done add body if"<< std::endl;
-                            // std::cout << "done add body if  before:" << currSever.getRequestClass().getBody()<< std::endl;
-                            // currSever.getRequestClass().addBody(buf);
-                            currSever.getRequestClass().addBody(clients[curr_event->ident]);
-                            // std::cout << "done add body if  after:" <<currSever.getRequestClass().getBody()<< std::endl;
-                        }
-                        else if (currSever.getStatus() == CHUNKED)
-                        {
-                            currSever.getRequestClass().addBody(clients[curr_event->ident]);
-                            std::cout << "size: " << currSever.getRequestClass().getBody().size() << std::endl;
-                            clients[curr_event->ident] = "";
-                            if ( checkLastChunked(currSever.getRequestClass().getBody()) )//
-                            {
-                                // 바디 rn기준으로 잘라넣을 거 추가;
-                                currSever.parseChunkedBody();
-                                currSever.setStatus(CHUNKED_FIN);
-                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                            }
-                            else//지워도됨
-                                currSever.setStatus(CHUNKED);
-                        }
-                        else if (clients[curr_event->ident].find("\r\n\r\n") != std::string::npos)
-                        {
-                            // std::cout << "header if "<< std::endl;
-                            currSever.getRequestClass().parseRequestMessage(clients[curr_event->ident]);
-                            // std::cout << "body 1024 under : " << clients[curr_event->ident] << std::endl;
-                            std::cout << "body 1024 under :" << currSever.getRequestClass().getBody() << ")"<< std::endl;
-                            std::map <std::string, std::string>::iterator chunkedIter = currSever.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
-                            clients[curr_event->ident] = "";
-                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
-                            {
-                                if(currSever.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
-                                {
-                                    // 바디 rn기준으로 잘라넣을 거 추가;
-                                    currSever.parseChunkedBody();
-                                    currSever.setStatus(CHUNKED_FIN);
-                                    change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                                }
-                                else
-                                    currSever.setStatus(CHUNKED);
-                            }
-                            else
-                            {
-                                currSever.setStatus(DONE);
-                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                            }
-
-                        }
-                        
-                    }
-                }
-                else if (fdManager.find(curr_event->ident) != fdManager.end())
+                if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
                     std::cout << "[Read] curr ident: " << curr_event->ident << std::endl;
                     Server &currServer = serverMap[fdManager[curr_event->ident]];
@@ -308,6 +236,80 @@ void WebServer::monitorKqueue()
                         // std::cout << " cgi dooooooon \n";
                     }
                 }
+                else if (clients.find(curr_event->ident) != clients.end())
+                {
+                    // parse request
+                    char buf[65536];
+                    memset(buf,0,65536);
+                    int n = read(curr_event->ident, buf, sizeof(buf) - 1);
+                    // std::cout << "[ after read ]" << std::endl;
+                    if (n <= 0)
+                    {
+                        if (n < 0)
+                            printErr("client read error!");
+                        std::cout << "read:diconnect call" <<std::endl;
+                        // serverMap[clientsServerMap[curr_event->ident]].setStatus(READY);
+                        disconnect_client(curr_event->ident, clients, clientsServerMap);
+                    }
+                    else
+                    {
+                        // std::cout << "after read n:" << n <<"fd:: " << curr_event->ident<< std::endl;
+                        buf[n] = '\0';
+                        clients[curr_event->ident] += buf;
+                        Server &currSever = serverMap[clientsServerMap[curr_event->ident]];//TODO::  청크드 로직에서 메세지의 끝은 rn 인데 우리는 rn이고 뭐고 그냥 때려 넣음
+                        if (currSever.getStatus() == DONE)
+                        {
+                            // std::cout << "done add body if"<< std::endl;
+                            // std::cout << "done add body if  before:" << currSever.getRequestClass().getBody()<< std::endl;
+                            // currSever.getRequestClass().addBody(buf);
+                            currSever.getRequestClass().addBody(clients[curr_event->ident]);
+                            // std::cout << "done add body if  after:" <<currSever.getRequestClass().getBody()<< std::endl;
+                        }
+                        else if (currSever.getStatus() == CHUNKED)
+                        {
+                            currSever.getRequestClass().addBody(clients[curr_event->ident]);
+                            std::cout << "size: " << currSever.getRequestClass().getBody().size() << std::endl;
+                            clients[curr_event->ident] = "";
+                            if ( checkLastChunked(currSever.getRequestClass().getBody()) )//
+                            {
+                                // 바디 rn기준으로 잘라넣을 거 추가;
+                                currSever.parseChunkedBody();
+                                currSever.setStatus(CHUNKED_FIN);
+                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            }
+                            else//지워도됨
+                                currSever.setStatus(CHUNKED);
+                        }
+                        else if (clients[curr_event->ident].find("\r\n\r\n") != std::string::npos)
+                        {
+                            // std::cout << "header if "<< std::endl;
+                            currSever.getRequestClass().parseRequestMessage(clients[curr_event->ident]);
+                            // std::cout << "body 1024 under : " << clients[curr_event->ident] << std::endl;
+                            // std::cout << "body 1024 under :" << currSever.getRequestClass().getBody() << ")"<< std::endl;
+                            std::map <std::string, std::string>::iterator chunkedIter = currSever.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
+                            clients[curr_event->ident] = "";
+                            if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
+                            {
+                                if(currSever.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
+                                {
+                                    // 바디 rn기준으로 잘라넣을 거 추가;
+                                    currSever.parseChunkedBody();
+                                    currSever.setStatus(CHUNKED_FIN);
+                                    change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                                }
+                                else
+                                    currSever.setStatus(CHUNKED);
+                            }
+                            else
+                            {
+                                currSever.setStatus(DONE);
+                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            }
+
+                        }
+                        
+                    }
+                } 
                 //알맞은서버찾아서 이터든 뭐든 반환?
                 else if (serverMap.find(curr_event->ident) != serverMap.end())
                 {
@@ -348,9 +350,55 @@ void WebServer::monitorKqueue()
                         //     printf("c:%d\n",tmp[i]);
                         // }
                         // exit(1);
-                        static int i = 0;
-                        std::cout << i++ << std::endl;
-                        if ((write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size())) == -1)
+                        // static int i = 0;
+                        // std::cout << i++ << std::endl;
+                        // std::cout << " ident " <<curr_event->ident << "body:" << serverMap[fdManager[curr_event->ident]].getRequestClass().getBody() <<std::endl;
+                        
+                        // if (serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size() > 65000)
+                        // {
+                        //     std::cout << " 2very big!" << std::endl;//??????
+                        //     std::vector <std::string > chunkedStrVec;
+
+                        //     chunkedStrVec = makeChunkedVec(serverMap[fdManager[curr_event->ident]].getRequestClass().getBody());
+                        //     for (int idx = 0 ; idx < chunkedStrVec.size() ; idx++)
+                        //     {
+                        //         std::cout << idx << std::endl;
+                        //         std::cout <<"size" << chunkedStrVec[0].size() << std::endl;
+                        //         write(curr_event->ident, chunkedStrVec[0].c_str(), chunkedStrVec[0].size());
+                        //     }
+                        //     serverMap[fdManager[curr_event->ident]].forkCgiPid();
+                        //     if (serverMap[fdManager[curr_event->ident]].getCgiPid() == 0)
+                        //     {
+                        //         std::string body;
+                        //         int n;
+                        //         char buf[1024];
+
+                        //         dup2(serverMap[fdManager[curr_event->ident]].getReadFd()[1],1);
+                        //         // close(serverMap[fdManager[curr_event->ident]].getReadFd()[1]);
+
+                        //         close(serverMap[fdManager[curr_event->ident]].getReadFd()[0]);
+                        //         // close(readFd[1]);
+                        //         dup2(serverMap[fdManager[curr_event->ident]].getWriteFd()[0],0);
+                        //         // close(writeFd[0]);
+                        //         close(serverMap[fdManager[curr_event->ident]].getWriteFd()[1]);
+
+                                
+                        //         char *test[2] ;
+                        //         test[0] = (char *)(serverMap[fdManager[curr_event->ident]].getCurrLocation().getCgiPath().c_str());
+                        //         test[1] = NULL;
+                        //         if((execve(serverMap[fdManager[curr_event->ident]].getCurrLocation().getCgiPath().c_str(),test, serverMap[fdManager[curr_event->ident]].makeEnvp())) == -1 )
+                        //         {
+                        //             write(serverMap[fdManager[curr_event->ident]].getReadFd()[1], "errororor\n", 11);
+                        //             exit(1);
+                        //         }
+                        //         exit(1);
+                        //     }
+                        //     serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
+                        //     change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                        //     std::cout << "read[fd]: " << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
+                        //     fdManager.erase(curr_event->ident);
+                        // }
+                        if ((write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size())) != -1)
                         {
                             serverMap[fdManager[curr_event->ident]].forkCgiPid();
                             if (serverMap[fdManager[curr_event->ident]].getCgiPid() == 0)
@@ -384,10 +432,10 @@ void WebServer::monitorKqueue()
                             std::cout << "read[fd]: " << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
                             fdManager.erase(curr_event->ident);
                         }
-                        // else
-                        // {
-                        //     std::cout << " hyopark is very cold"<<std::endl;
-                        // }
+                        else
+                        {
+                            std::cout << " hyopark is very cold"<<std::endl;
+                        }
                     }
                     else if (serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE || serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
                     {
@@ -406,8 +454,8 @@ void WebServer::monitorKqueue()
                     {
                         // std::cout << "2\n";
                         std::map <std::string, std::string>::iterator findIter = currSever.getRequestClass().getHeader().getContent().find("Content-Length");
-                        std::cout << "done body : "  << currSever.getRequestClass().getBody();
-                        std::cout << "done body : "  << currSever.getRequestClass().getBody();
+                        // std::cout << "done body : "  << currSever.getRequestClass().getBody();
+                        // std::cout << "done body : "  << currSever.getRequestClass().getBody();
                         
                         if (findIter != currSever.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                         {   
@@ -440,7 +488,7 @@ void WebServer::monitorKqueue()
                     {
                         std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
                         // std::cout << "write3" <<std::endl;
-                        std::cout << "msf: " << ResponseMessage << std::endl;
+                        // std::cout << "msf: " << ResponseMessage << std::endl;
                         // std::cout << "size" << ResponseMessage.size() << std::endl;
                         // std::cout << "curr identttttt: " << curr_event->ident << std::endl;
                         if (write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)

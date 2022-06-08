@@ -394,14 +394,17 @@ void Server::preProcess(int type)
 	std::cout << "ori pathTmp: "<< pathTmp << std::endl;
 	if (type != LOCATIONTYPE_CGI_DONE)
 		if (cgiLocation(pathTmp))
+		{
+			std::cout << "cgi find good" <<std::endl;
 			return ;
+		}
 	currLocation = whereIsLocation(pathTmp);
 	aliasRoot(currLocation, pathTmp);
 	checkPath(pathTmp);
 	currRequest.setPath(pathTmp);
-	std::cout << "pathTmp: "<< pathTmp << std::endl;
-	std::cout << "path2: "<< currRequest.getStartLine().path << std::endl;
-	std::cout << "prepro :: " << currLocation.getLocationType()  <<std::endl;
+	// std::cout << "pathTmp: "<< pathTmp << std::endl;
+	// std::cout << "path2: "<< currRequest.getStartLine().path << std::endl;
+	// std::cout << "prepro :: " << currLocation.getLocationType()  <<std::endl;
 }
 
 // int Server::checkMethod()
@@ -465,7 +468,7 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		std::cout << "write[fd]: " << writeFd[1] << std::endl;
 		std::cout << "cgi에서 size: " << getRequestClass().getBody().size() << std::endl;
-		
+		// currLocation.setLocationType(LOCATIONTYPE_CGI_DONE);
 		return ;
 	}
 	else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
@@ -643,6 +646,27 @@ int Server::serchIndex(std::string &path, Location _currLocation)
 	return (ADD_INDEX_FAIL);
 }
 
+std::vector<std::string > makeChunkedVec(std::string originStr)
+{
+	int idx = 0;
+	int currSzie = 0;
+	
+	std::vector<std::string > returnVec;
+
+	while (idx < originStr.size())
+	{
+		std::string currString = originStr.substr(idx,65000);
+		idx += currString.size();
+		currString = std::to_string(currString.size()) + "\r\n" + currString;
+		returnVec.push_back(currString);
+		if (idx > originStr.size())
+			break ;
+	}
+	returnVec.push_back("0\r\n\r\n");
+	return (returnVec);
+}
+
+
 void Server::readFile(int fd)
 {
     std::string content = "";
@@ -662,11 +686,29 @@ void Server::readFile(int fd)
     close(fd);
 }
 
+
+
 void Server::writeFile(int fd)
 {
 	std::cout << " wrtie File " << std::endl;
-	write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
+	std::cout << currRequest.getBody().size() << std::endl;
+	if (currRequest.getBody().size() > 65000)
+	{
+		std::cout << " very big!" << std::endl;//??????
+		std::vector <std::string > chunkedStrVec;
+
+		chunkedStrVec = makeChunkedVec(currRequest.getBody());
+		for (int idx = 0 ; idx < chunkedStrVec.size() ; idx++)
+		{
+			std::cout << idx << std::endl;
+			std::cout <<"size" << chunkedStrVec[idx].size() << std::endl;
+			write(fd, chunkedStrVec[idx].c_str(), chunkedStrVec[idx].size());
+		}
+	}
+	else
+		write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
 	this->currResponse.setStatusCode(201);
+	std::cout << " wrtie File Done" << std::endl;
     // this->currResponse.setBody(content);
 	close(fd);
 }
@@ -849,7 +891,7 @@ void Server::postMethod()
 		return (setErrorResponse(403));
 	}
 	// currResponse.setStatusCode(201);//이거 안바꿔야함
-	std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
+	// std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
 	// if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
 	if (currRequest.getBody().size() != 0)
 	{

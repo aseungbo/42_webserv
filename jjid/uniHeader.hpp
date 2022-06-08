@@ -10,6 +10,7 @@
 
 #include <filesystem>
 #include <stdio.h>
+#include <stdlib.h>
 
 //socket
 #include <sys/types.h>
