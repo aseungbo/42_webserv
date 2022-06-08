@@ -279,6 +279,7 @@ char  **Server::makeEnvp()
 	
 	currRequest.getHeader().getContent().find("Content-Length");
 	temp = "CONTENT_LENGTH=" + currRequest.getHeader().getContent().find("Content-Length")->second;
+	std::cout <<"makeEnv:" << currRequest.getBody().size()<<std::endl;
 	// std::cout << "jjibal0"<<temp<<std::endl;
 	result[3] = new char[temp.size() + 1];
 	result[3] = strcpy(result[3], temp.c_str());
@@ -463,6 +464,8 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		setFdManager(writeFd[1], getServerFd());
 		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		std::cout << "write[fd]: " << writeFd[1] << std::endl;
+		std::cout << "cgi에서 size: " << getRequestClass().getBody().size() << std::endl;
+		
 		return ;
 	}
 	else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
@@ -896,21 +899,23 @@ void Server::resetServerValues()
 }
 void Server::parseChunkedBody()
 {
+	std::cout << "파스청크바디" << getRequestClass().getBody().size()<<std::endl;
 	int idx = 0;
 	int cunkeSize = 0;
 	std::string orginBody = getRequestClass().getBody();
 	std::string resultBody;
-	// for (int idx = 0 ; idx < orginBody.size();)
 	while (idx < orginBody.size())
 	{
 		int find = orginBody.find("\r\n", idx);
-		cunkeSize = std::strtol(orginBody.substr(idx, find).c_str(), NULL, 16);
+		cunkeSize = std::strtol(orginBody.substr(idx, find - idx).c_str(), NULL, 16);
+		std::cout << "청크드 사이즈 " << cunkeSize << std::endl;
 		if (cunkeSize == 0)//|| npos
 			break;
-		resultBody += orginBody.substr(find + 2, find + 2 + chunkedSize);
-		idx = find + 2 + chunkedSize;
+		resultBody += orginBody.substr(find + 2, cunkeSize);
+		idx = find + 2 + cunkeSize + 1;
 	}
 	getRequestClass().setBody(resultBody);
+	std::cout << "파스청크바디 끝" << getRequestClass().getBody().size()<<std::endl;
 }
 // void Server::headMethod()
 // {

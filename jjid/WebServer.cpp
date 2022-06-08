@@ -119,7 +119,7 @@ void disconnect_client(int client_fd, std::map<int, std::string>& clients, std::
 bool WebServer::checkLastChunked(std::string const &str)
 {
     int strSize = str.size();
-    if (str.size() > 4)
+    if (strSize > 4)
     {
         if (str[strSize - 5] == '0' && str[strSize - 4] == '\r' && str[strSize - 3] == '\n' && str[strSize - 2] == '\r' && str[strSize - 1] == '\n')
             return (true);
@@ -186,8 +186,8 @@ void WebServer::monitorKqueue()
                 if (clients.find(curr_event->ident) != clients.end())
                 {
                     // parse request
-                    char buf[1024];
-                    memset(buf,0,1024);
+                    char buf[60000];
+                    memset(buf,0,60000);
                     int n = read(curr_event->ident, buf, sizeof(buf) - 1);
                     // std::cout << "[ after read ]" << std::endl;
                     if (n <= 0)
@@ -336,19 +336,21 @@ void WebServer::monitorKqueue()
                     // std::cout << "type :: "<< serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() <<std::endl;;
                     if (serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI)//cgi처리로직 조건
                     {
-                        std::cout << "[write] curr ident: " << curr_event->ident << std::endl;
+                        // std::cout << "[write] curr ident: " << curr_event->ident << std::endl;
                         // write 
                         // std::cout << "[body]" << serverMap[fdManager[curr_event->ident]].getRequestClass().getBody() << std::endl;
-                        
+                        //사이즈가 크면 라이트를 일정크기만큼만 합니다. -> 
+                        std::string tmp = serverMap[fdManager[curr_event->ident]].getRequestClass().getBody();
+                        std::cout << "size:::" << serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size()<<std::endl;
+                        // for (int i = 0 ; i < tmp.size();i++)
+                        // {
+                        //     printf("c:%d\n",tmp[i]);
+                        // }
+                        // exit(1);
+                        static int i = 0;
+                        std::cout << i++ << std::endl;
                         if ((write(curr_event->ident, serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().c_str(), serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size())) == -1)
                         {
-                            // write(curr_event->ident, "\r\n", 2); 
-                            // std::cout << " hyopark is very hot" << std::endl;
-                            // Server &serverMap[fdManager[curr_event->ident]] = serverMap[fdManager[curr_event->ident]];
-                            // std::cout << "=================="<< std::endl;
-                            // serverMap[fdManager[curr_event->ident]].makeEnvp();
-                            // std::cout << "=================="<< std::endl;
-                            // exit(1);
                             serverMap[fdManager[curr_event->ident]].forkCgiPid();
                             if (serverMap[fdManager[curr_event->ident]].getCgiPid() == 0)
                             {
