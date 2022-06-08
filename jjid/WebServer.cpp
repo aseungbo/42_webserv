@@ -186,8 +186,8 @@ void WebServer::monitorKqueue()
                 if (clients.find(curr_event->ident) != clients.end())
                 {
                     // parse request
-                    char buf[60000];
-                    memset(buf,0,60000);
+                    char buf[65536];
+                    memset(buf,0,65536);
                     int n = read(curr_event->ident, buf, sizeof(buf) - 1);
                     // std::cout << "[ after read ]" << std::endl;
                     if (n <= 0)
@@ -208,7 +208,8 @@ void WebServer::monitorKqueue()
                         {
                             // std::cout << "done add body if"<< std::endl;
                             // std::cout << "done add body if  before:" << currSever.getRequestClass().getBody()<< std::endl;
-                            currSever.getRequestClass().addBody(buf);
+                            // currSever.getRequestClass().addBody(buf);
+                            currSever.getRequestClass().addBody(clients[curr_event->ident]);
                             // std::cout << "done add body if  after:" <<currSever.getRequestClass().getBody()<< std::endl;
                         }
                         else if (currSever.getStatus() == CHUNKED)
@@ -383,10 +384,10 @@ void WebServer::monitorKqueue()
                             std::cout << "read[fd]: " << serverMap[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
                             fdManager.erase(curr_event->ident);
                         }
-                        else
-                        {
-                            std::cout << " hyopark is very cold"<<std::endl;
-                        }
+                        // else
+                        // {
+                        //     std::cout << " hyopark is very cold"<<std::endl;
+                        // }
                     }
                     else if (serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE || serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
                     {
