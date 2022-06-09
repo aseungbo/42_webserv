@@ -300,6 +300,7 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
         if (locations.size() != 0)
             serv.setLocation(locations);
         serv.setStatus(READY);
+        serv.setCgiPid(-1);
         serv.getResponseClass().setStatusCode(0);
         servers.push_back(serv);
     }

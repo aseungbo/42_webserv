@@ -31,6 +31,11 @@ void Server::setWriteFd()
 	pipe(writeFd);
 }
 
+void Server::setCgiPid(int pid)
+{
+	cgiPid=pid;
+}
+
 pid_t Server::getCgiPid()
 {
 	return (cgiPid);
@@ -227,7 +232,7 @@ std::string Server::autoIndexBody()
 	return (body);
 }
 
-char  **Server::makeEnvp()
+char  **Server::makeEnvp(int length)
 {
 
 	// char *test = "REQUEST_METHOD=GET";
@@ -278,8 +283,8 @@ char  **Server::makeEnvp()
 	// std::cout << currRequest.getBody().size() << std::endl;
 	
 	currRequest.getHeader().getContent().find("Content-Length");
-	temp = "CONTENT_LENGTH=" + currRequest.getHeader().getContent().find("Content-Length")->second;
-	std::cout <<"makeEnv:" << currRequest.getBody().size()<<std::endl;
+	// temp = "CONTENT_LENGTH=" + currRequest.getHeader().getContent().find("Content-Length")->second;
+	temp = "CONTENT_LENGTH=" + std::to_string(length);
 	// std::cout << "jjibal0"<<temp<<std::endl;
 	result[3] = new char[temp.size() + 1];
 	result[3] = strcpy(result[3], temp.c_str());
@@ -465,6 +470,10 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 		
 		std::cout << "cGI !\n";
 		setFdManager(writeFd[1], getServerFd());
+		fcntl(writeFd[1], F_SETFL, O_NONBLOCK);
+		fcntl(writeFd[0], F_SETFL, O_NONBLOCK);
+		fcntl(readFd[1], F_SETFL, O_NONBLOCK);
+		fcntl(readFd[0], F_SETFL, O_NONBLOCK);
 		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		std::cout << "write[fd]: " << writeFd[1] << std::endl;
 		std::cout << "cgi에서 size: " << getRequestClass().getBody().size() << std::endl;
@@ -700,17 +709,22 @@ void Server::writeFile(int fd)
 		chunkedStrVec = makeChunkedVec(currRequest.getBody());
 		for (int idx = 0 ; idx < chunkedStrVec.size() ; idx++)
 		{
+			int n ;
 			std::cout << idx << std::endl;
 			std::cout <<"size" << chunkedStrVec[idx].size() << std::endl;
-			write(fd, chunkedStrVec[idx].c_str(), chunkedStrVec[idx].size());
+			std::cout << "fd" << fd <<std::endl;
+			std::cout << "vec str:" << chunkedStrVec[idx] <<std::endl;
+			n = write(fd, chunkedStrVec[idx].c_str(), chunkedStrVec[idx].size());
+			std::cout <<"n" << n << std::endl;
 		}
 	}
 	else
 		write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
 	this->currResponse.setStatusCode(201);
+	close(fd);
 	std::cout << " wrtie File Done" << std::endl;
     // this->currResponse.setBody(content);
-	close(fd);
+    
 }
 
 void Server::openFile(std::string path, int isHead)
@@ -895,6 +909,7 @@ void Server::postMethod()
 	// if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
 	if (currRequest.getBody().size() != 0)
 	{
+		fcntl(fd, F_SETFL, O_NONBLOCK);
 		setFdManager(fd, getServerFd());
 		change_events(*changeList, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0,0,NULL);
 		// write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
@@ -950,7 +965,7 @@ void Server::parseChunkedBody()
 	{
 		int find = orginBody.find("\r\n", idx);
 		cunkeSize = std::strtol(orginBody.substr(idx, find - idx).c_str(), NULL, 16);
-		std::cout << "청크드 사이즈 " << cunkeSize << std::endl;
+		// std::cout << "청크드 사이즈 " << cunkeSize << std::endl;
 		if (cunkeSize == 0)//|| npos
 			break;
 		resultBody += orginBody.substr(find + 2, cunkeSize);

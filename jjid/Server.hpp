@@ -85,7 +85,7 @@ class Server
 			
 		public:
 
-		char  **makeEnvp();
+		char  **makeEnvp(int length);
 		pid_t getCgiPid();
 		void forkCgiPid();
 		
@@ -116,6 +116,7 @@ class Server
 			void setErrPage(std::map<std::vector<int>, std::string> errPage);
 			void setLocation(std::vector<Location> locations);
 			void setAllowMethod(std::vector<std::string> allowMethod);
+			void setCgiPid(int pid);
 			
 			// get
 			std::string getRoot();
