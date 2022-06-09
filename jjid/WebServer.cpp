@@ -231,15 +231,15 @@ void WebServer::monitorKqueue()
                         std::cout << "!@#$%^ size: " <<chunkedStr.size()<<std::endl;
                         if (currServer.getRequestClass().getBody().size() <= chunkedStr.size())
                         {
-                            std::cout << "hi!"<< chunkedStr << std::endl;
+                            // std::cout << "hi!"<< chunkedStr << std::endl;
                             currServer.getRequestClass().setBody(chunkedStr.substr(chunkedStr.find("\r\n\r\n") + 4));
                             currServer.getResponseClass().setBody(chunkedStr.substr(chunkedStr.find("\r\n\r\n") + 4));
                             currServer.getCurrLocation().setLocationType(LOCATIONTYPE_CGI_DONE);
                             // std::cout << "204 type:" << currServer.getCurrLocation().getLocationType()<<std::endl;;
                             std::map <std::string, std::string>::iterator findIter = currServer.getRequestClass().getHeader().getContent().find("Content-Length");
                             currServer.setStatus(DONE);
-                            fcntl(curr_event->ident, F_SETFL, O_NONBLOCK);//넌 이제부터 논블로킹이야
-                            change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
+                            // fcntl(curr_event->ident, F_SETFL, O_NONBLOCK);//넌 이제부터 논블로킹이야
+                            // change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
                             if (findIter != currServer.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                                 findIter->second = std::to_string(currServer.getRequestClass().getBody().size());
                             fdManager.erase(curr_event->ident);
@@ -383,11 +383,13 @@ void WebServer::monitorKqueue()
                             }
                             serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
                             change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            
                             // fcntl(serverMap[fdManager[curr_event->ident]].getReadFd()[0], F_SETFL, O_NONBLOCK);
                             
                             // // if () //FD 다 쓴곳에서 다같이 삭제하는것도 방법임
                             //     fdManager.erase(curr_event->ident);
-                            if (writeSize ==serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size() )
+                            // std::cout << "writeSize:"<<writeSize<<", bodysize:"<<serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size()<<std::endl;
+                            if (writeSize >= serverMap[fdManager[curr_event->ident]].getRequestClass().getBody().size() )
                             {
                             serverMap[fdManager[curr_event->ident]].setFdManager(serverMap[fdManager[curr_event->ident]].getReadFd()[0], serverMap[fdManager[curr_event->ident]].getServerFd());
                             change_events(change_list, serverMap[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -454,22 +456,43 @@ void WebServer::monitorKqueue()
                     }
                     else if (currSever.getResponseClass().getStatusCode() != 0)
                     {
-                        std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
                         // std::cout << "write3" <<std::endl;
                         // std::cout << "msf: " << ResponseMessage << std::endl;
                         // std::cout << "size" << ResponseMessage.size() << std::endl;
                         // std::cout << "curr identttttt: " << curr_event->ident << std::endl;
-                        if (write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
+                        if (serverMap[clientsServerMap[curr_event->ident]].getResponseClass().getBody().size() > 65000)
                         {
-                            printErr("client write err");
-                            disconnect_client(curr_event->ident, clients, clientsServerMap);
+                            std::vector< std::string > chunkedVec;
+                            std::string tmpHeader;
+                            tmpHeader = "Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: close\r\nContent-Type: text/html;charset=UTF-8\r\nTransfer-Encoding:chunked\r\n\r\n";
+                            write(curr_event->ident, tmpHeader.c_str(), tmpHeader.size());
+                            chunkedVec = makeChunkedVec(serverMap[clientsServerMap[curr_event->ident]].getResponseClass().getBody());
+                            for (int idx = 0 ; idx <chunkedVec.size();idx++ )
+                            {
+                                std::cout << "보내는중" <<idx<<std::endl;
+                                write(curr_event->ident, chunkedVec[idx].c_str(), chunkedVec[idx].size());
+                            }
+                            clients[curr_event->ident].clear();
+                                clientsServerMap.erase(curr_event->ident);
+                                currSever.getResponseClass().setStatusCode(0);
                         }
                         else
                         {
-                            clients[curr_event->ident].clear();
-                            clientsServerMap.erase(curr_event->ident);
-                            currSever.getResponseClass().setStatusCode(0);
+                            std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().writeResponseMessage();
+                            if (write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
+                            {
+                                printErr("client write err");
+                                disconnect_client(curr_event->ident, clients, clientsServerMap);
+                            }
+                            else
+                            {
+                                clients[curr_event->ident].clear();
+                                clientsServerMap.erase(curr_event->ident);
+                                currSever.getResponseClass().setStatusCode(0);
+                            }
                         }
+                        
+                        
                         currSever.resetServerValues();
                         //지우기 Server : curr들 초기화 initServerCurrResponseAndRequestAndLocation
 

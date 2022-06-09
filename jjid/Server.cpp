@@ -655,6 +655,8 @@ int Server::serchIndex(std::string &path, Location _currLocation)
 	return (ADD_INDEX_FAIL);
 }
 
+
+
 std::vector<std::string > makeChunkedVec(std::string originStr)
 {
 	int idx = 0;
@@ -666,7 +668,10 @@ std::vector<std::string > makeChunkedVec(std::string originStr)
 	{
 		std::string currString = originStr.substr(idx,65000);
 		idx += currString.size();
-		currString = std::to_string(currString.size()) + "\r\n" + currString;
+		
+		// dec2hex(currString.size(), )
+		
+		currString = std::to_string(std::strtol(std::to_string(currString.size()).c_str(),NULL,16))+ "\r\n" + currString;
 		returnVec.push_back(currString);
 		if (idx > originStr.size())
 			break ;
@@ -687,9 +692,9 @@ void Server::readFile(int fd)
         content += buf;
         memset(buf, 0, 1024);
     }
-    std::cout << "[ only for test read content ]" << std::endl;
-    std::cout << content << std::endl;
-    std::cout << "[ only for test read content ]" << std::endl;
+    // std::cout << "[ only for test read content ]" << std::endl;
+    // std::cout << content << std::endl;
+    // std::cout << "[ only for test read content ]" << std::endl;
     this->currResponse.setStatusCode(200);
     this->currResponse.setBody(content);
     close(fd);
@@ -710,12 +715,12 @@ void Server::writeFile(int fd)
 		for (int idx = 0 ; idx < chunkedStrVec.size() ; idx++)
 		{
 			int n ;
-			std::cout << idx << std::endl;
-			std::cout <<"size" << chunkedStrVec[idx].size() << std::endl;
-			std::cout << "fd" << fd <<std::endl;
-			std::cout << "vec str:" << chunkedStrVec[idx] <<std::endl;
+			// std::cout << idx << std::endl;
+			// std::cout <<"size" << chunkedStrVec[idx].size() << std::endl;
+			// std::cout << "fd" << fd <<std::endl;
+			// std::cout << "vec str:" << chunkedStrVec[idx] <<std::endl;
 			n = write(fd, chunkedStrVec[idx].c_str(), chunkedStrVec[idx].size());
-			std::cout <<"n" << n << std::endl;
+			// std::cout <<"n" << n << std::endl;
 		}
 	}
 	else
