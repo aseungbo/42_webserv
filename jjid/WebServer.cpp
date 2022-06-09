@@ -464,14 +464,19 @@ void WebServer::monitorKqueue()
                         {
                             std::vector< std::string > chunkedVec;
                             std::string tmpHeader;
-                            tmpHeader = "Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: close\r\nContent-Type: text/html;charset=UTF-8\r\nTransfer-Encoding:chunked\r\n\r\n";
+                            int statusCode = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().getStatusCode();
+                            tmpHeader = "HTTP/1.1 " + std::to_string(statusCode) + " " + serverMap[clientsServerMap[curr_event->ident]].getResponseClass().statusMessage(statusCode) + "\r\n";
+                            tmpHeader += "Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: close\r\nContent-Type: text/html;charset=UTF-8\r\nTransfer-Encoding:chunked\r\n\r\n";
                             write(curr_event->ident, tmpHeader.c_str(), tmpHeader.size());
                             chunkedVec = makeChunkedVec(serverMap[clientsServerMap[curr_event->ident]].getResponseClass().getBody());
                             for (int idx = 0 ; idx <chunkedVec.size();idx++ )
                             {
                                 std::cout << "보내는중" <<idx<<std::endl;
+                                std::cout << "얼만큼?"<< chunkedVec[idx].size() <<std::endl;
+                                std::cout << "뭘?" << chunkedVec[idx] <<std::endl;
                                 write(curr_event->ident, chunkedVec[idx].c_str(), chunkedVec[idx].size());
                             }
+                            std::cout << "다보내땅!" <<std::endl;
                             clients[curr_event->ident].clear();
                                 clientsServerMap.erase(curr_event->ident);
                                 currSever.getResponseClass().setStatusCode(0);
