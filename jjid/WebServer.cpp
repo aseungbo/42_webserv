@@ -281,7 +281,7 @@ void WebServer::monitorKqueue()
                         {
                             currSever.getRequestClass().addBody(clients[curr_event->ident]);
                             std::cout << "size: " << currSever.getRequestClass().getBody().size() << std::endl;
-                            clients[curr_event->ident] = "";
+                            clients[curr_event->ident].clear();
                             if ( checkLastChunked(currSever.getRequestClass().getBody()) )//
                             {
                                 // 바디 rn기준으로 잘라넣을 거 추가;
@@ -299,7 +299,7 @@ void WebServer::monitorKqueue()
                             // std::cout << "body 1024 under : " << clients[curr_event->ident] << std::endl;
                             // std::cout << "body 1024 under :" << currSever.getRequestClass().getBody() << ")"<< std::endl;
                             std::map <std::string, std::string>::iterator chunkedIter = currSever.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
-                            clients[curr_event->ident] = "";
+                            clients[curr_event->ident].clear();
                             if (chunkedIter != currSever.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
                             {
                                 if(currSever.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)

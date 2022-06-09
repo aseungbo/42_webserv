@@ -141,7 +141,7 @@ Header& Request::getHeader()
 	return (header);
 }
 
-std::string Request::getBody()
+std::string& Request::getBody()
 {
 	return (body);
 }
