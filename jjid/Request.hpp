@@ -31,7 +31,7 @@ class Request
 
 		t_StartLine getStartLine();
 		Header& getHeader();
-		std::string getBody();
+		std::string& getBody();
 		std::string getExtension();
 
 		void addBody(std::string& str);
