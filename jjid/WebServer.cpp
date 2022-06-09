@@ -467,6 +467,7 @@ void WebServer::monitorKqueue()
                             int statusCode = serverMap[clientsServerMap[curr_event->ident]].getResponseClass().getStatusCode();
                             tmpHeader = "HTTP/1.1 " + std::to_string(statusCode) + " " + serverMap[clientsServerMap[curr_event->ident]].getResponseClass().statusMessage(statusCode) + "\r\n";
                             tmpHeader += "Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: keep-alive\r\nContent-Type: text/html;charset=UTF-8\r\nTransfer-Encoding: chunked\r\n\r\n";
+                            std::cout << tmpHeader <<std::endl;
                             write(curr_event->ident, tmpHeader.c_str(), tmpHeader.size());
                             chunkedVec = makeChunkedVec(serverMap[clientsServerMap[curr_event->ident]].getResponseClass().getBody());
                             for (int idx = 0 ; idx <chunkedVec.size();idx++ )

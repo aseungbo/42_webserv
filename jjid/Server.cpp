@@ -692,7 +692,7 @@ std::vector<std::string > makeChunkedVec(std::string originStr)
 		
 		// dec2hex(currString.size(), )
 		
-		currString = intToHexStr(currString.size())+ "\r\n" + currString;
+		currString = intToHexStr(currString.size())+ "\r\n" + currString + "\r\n";
 		returnVec.push_back(currString);
 		if (idx > originStr.size())
 			break ;
