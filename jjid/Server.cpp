@@ -655,6 +655,27 @@ int Server::serchIndex(std::string &path, Location _currLocation)
 	return (ADD_INDEX_FAIL);
 }
 
+std::string intToHexStr(int decimal)
+{
+   std::string hexadecimal; 
+    int position = 0;
+    while (1)
+    {
+        int mod = decimal % 16;    
+        if (mod < 10) 
+            hexadecimal[position] = 48 + mod;
+        else       
+            hexadecimal[position] = 97 + (mod - 10);
+        decimal = decimal / 16;    
+        position++;    
+        if (decimal == 0)    
+            break;
+    }
+    std::string ret;
+    for (int i = position - 1; i >= 0; i--)
+        ret +=hexadecimal[i];
+    return ret;
+}
 
 
 std::vector<std::string > makeChunkedVec(std::string originStr)
@@ -671,8 +692,7 @@ std::vector<std::string > makeChunkedVec(std::string originStr)
 		
 		// dec2hex(currString.size(), )
 		
-		std::cout << "스트링 사이즈는?!" << (std::strtol(std::to_string(currString.size()).c_str(),NULL,16)) << std::endl;
-		currString = (std::to_string(std::strtol(std::to_string(currString.size()).c_str(),NULL,16)))+ "\r\n" + currString;
+		currString = intToHexStr(currString.size())+ "\r\n" + currString;
 		returnVec.push_back(currString);
 		if (idx > originStr.size())
 			break ;
