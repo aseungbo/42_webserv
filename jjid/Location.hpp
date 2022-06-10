@@ -23,6 +23,7 @@ class Location
 			std::string cgiPath;
 			int returnCode;
 			std::string returnUrl;
+			int clientBodySize;
 			
 		public:
 			Location(void);
@@ -39,6 +40,7 @@ class Location
 			
 			int getReturnCode();
 			std::string getReturnUrl();
+			int getClientBodySize();
 
 			void setRoot(std::string root);
 			void setPath(std::string path);
@@ -53,6 +55,8 @@ class Location
 			void setReturnUrl(std::string url);
 			
 			void setAutoIndex(bool flag);
+
+			void setClientBodySize(int size);
 	};
 
 #endif

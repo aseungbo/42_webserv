@@ -3,6 +3,21 @@
 void aliasRoot(Location currLocation, std::string &path);
 int checkPath(std::string &path);
 
+Server::Server()
+{
+	setClientSocket(0);
+	setStatus(READY);
+	setChunkedSize(0);
+	setCurrChunkedSize(0);
+	setPort(0);
+	setClientBodySize(0);
+	setServerFd(0);
+	fdFlag = 0;
+	setCgiPid(-1);
+	getResponseClass().setStatusCode(0);
+	serverStatus = SERVER_READY;
+}
+
 void Server::setServerFd(int fd)
 {
 	serverFd = fd;
@@ -185,6 +200,17 @@ Response& Server::getResponseClass()
 {
 	return (currResponse);
 }
+
+int Server::getServerStatus()
+{
+	return (serverStatus);
+}
+
+void Server::setServerStatus(int serverStatus)
+{
+	this->serverStatus = serverStatus;
+}
+
 
 void Server::setErrorResponse(int statusCode)
 {

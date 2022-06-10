@@ -253,7 +253,7 @@ void WebServer::monitorKqueue()
                 }
                 else if (clients.find(curr_event->ident) != clients.end())
                 {
-                    if ( serverMap[clientsServerMap[curr_event->ident]].serverStatus != SERVER_READY)
+                    if ( serverMap[clientsServerMap[curr_event->ident]].getServerStatus() != SERVER_READY)
                         break;
                     // parse request
                     char buf[65536];
@@ -464,7 +464,7 @@ void WebServer::monitorKqueue()
                     }
                     else if (currSever.getResponseClass().getStatusCode() != 0)
                     {
-                        serverMap[clientsServerMap[curr_event->ident]].serverStatus = SERVER_ING;
+                        serverMap[clientsServerMap[curr_event->ident]].setServerStatus(SERVER_ING);
                         // std::cout << "write3" <<std::endl;
                         // std::cout << "msf: " << ResponseMessage << std::endl;
                         // std::cout << "size" << ResponseMessage.size() << std::endl;
