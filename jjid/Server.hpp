@@ -36,6 +36,10 @@
 #define CHUNKED_DONE 4
 #define CHUNKED_FIN 5
 
+#define SERVER_READY 0
+#define SERVER_ING 1
+
+
 // #define LOCATIONTYPE_NORMAL 0
 // #define LOCATIONTYPE_REDIR 1
 // #define LOCATIONTYPE_CGI 2
@@ -84,6 +88,8 @@ class Server
 			char **envp;
 			
 		public:
+		int serverStatus;
+		Server(){serverStatus=0;}
 
 		char  **makeEnvp(int length);
 		pid_t getCgiPid();

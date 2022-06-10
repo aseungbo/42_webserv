@@ -12,6 +12,7 @@ class Response
 			std::string body;
 	
 		public:
+			std::vector <std::string> chunkedVec;
 			// std::string ();//안에 바디사이즈로 청크드 만드는 메서드 호출 하고싶음
 			std::string searchStatusCodeMessage(int statusCode);
 			

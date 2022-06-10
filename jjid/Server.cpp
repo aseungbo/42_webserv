@@ -246,7 +246,7 @@ char  **Server::makeEnvp(int length)
     // test2[3] = test;
     // test2[4] = NULL;
     // return (test2);
-	char **result = new char*[6];
+	char **result = new char*[7];
 	std::string str;
 
 	int ret = currRequest.getStartLine().method;
@@ -274,6 +274,7 @@ char  **Server::makeEnvp(int length)
 
 	// std::cout <<"[" << currRequest.getStartLine().path << "]" << std::endl;
 
+	//보류
 	temp = "PATH_INFO=/Users/mac/goinfre/42_jjidserv/jjid/YoupiBanane/youpi.bla";
 	result[2] = new char[temp.size() + 1];
 	result[2] = strcpy(result[2], temp.c_str());
@@ -295,6 +296,21 @@ char  **Server::makeEnvp(int length)
 	result[4] = new char[temp.size() + 1];
 	result[4] = strcpy(result[4], temp.c_str());
 	temp.clear();
+	
+	std::map< std::string, std::string >::iterator XIter = getRequestClass().getHeader().getContent().find("X-Secret-Header-For-Test");
+	if (XIter != getRequestClass().getHeader().getContent().end())
+	{
+		temp = "HTTP_X_SECRET_HEADER_FOR_TEST=" + XIter->second;
+		result[5] = new char[temp.size() + 1];
+		result[5] = strcpy(result[5], temp.c_str());
+		temp.clear();
+		// result[6] = NULL;
+	}
+	else
+		result[5] = NULL;
+		result[6] = NULL;
+	
+	
 
 	
 	// //이건 잘 모르겠음
@@ -332,11 +348,11 @@ char  **Server::makeEnvp(int length)
 
 	// temp = "HTTP_ACCEPT_CHARSET=utf-8";
 	// result[10] = new char[temp.size() + 1];
+	
 	// result[10] = strcpy(result[10], temp.c_str());
 	// temp.clear();
 	
 
-	result[5] = NULL;
 	
 	
 	// std::cout << "<<<<<<<<<<<<<<" << std::endl;
@@ -961,6 +977,7 @@ void Server::deleteMethod()
 
 void Server::resetServerValues()
 {
+	std::cout << "reset caaaaallllll"<<std::endl;
 	getResponseClass().setBody("");
 	getResponseClass().setStatusCode(0);
 	getResponseClass().getHeader().getContent().clear();
@@ -977,7 +994,15 @@ void Server::resetServerValues()
 	envp = NULL;
 	setChunkedSize(0);
 	setCurrChunkedSize(0);
+	
+	
+	setCgiPid(-1);
+	readFd[0] = 0;
+	readFd[1] = 0;
+	writeFd[1] = 0;
+	writeFd[1] = 0;
 	// TODO fdFlag 초기화?
+	serverStatus = SERVER_READY;
 
 }
 void Server::parseChunkedBody()
