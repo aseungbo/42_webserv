@@ -87,9 +87,10 @@ class Server
 			
 			char **envp;
 			
+			int serverStatus;
+
 		public:
-		int serverStatus;
-		Server(){serverStatus=0;}
+			Server(void);
 
 		char  **makeEnvp(int length);
 		pid_t getCgiPid();
@@ -143,6 +144,8 @@ class Server
 			void deleteMethod();
 			// void headMethod();
 			
+			int getServerStatus();
+			void setServerStatus(int serverStatus);
 			
 			// Location whereIsLocation(std::string &path, std::vector<Location> locations);
 			Location whereIsLocation(std::string const & path);

@@ -6,6 +6,7 @@ Location::Location(void)
     setLocationType(LOCATIONTYPE_NORMAL);
     setAutoIndex(false);
 	setReturnCode(0);
+	setClientBodySize(0);
 }
 
 std::string Location::getRoot()
@@ -61,6 +62,16 @@ std::string Location::getReturnUrl()
 bool Location::getAutoIndex()
 {
 	return (autoIndex);
+}
+
+int Location::getClientBodySize()
+{
+	return (clientBodySize);
+}
+
+void Location::setClientBodySize(int size)
+{
+	this->clientBodySize = size;
 }
 
 void Location::setRoot(std::string root)

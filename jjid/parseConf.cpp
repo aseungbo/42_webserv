@@ -208,6 +208,8 @@ Location Parser::initLocation()
         loc.setAllowMethod(locMap.find("limit_except")->second);
     if (locMap.find("autoindex") != locMap.end())
         loc.setAutoIndex(locMap.find("autoindex")->second[0] == "on" ? true : false);
+    if (locMap.find("client_max_body_size") != locMap.end())
+        loc.setClientBodySize(atoi((locMap.find("client_max_body_size")->second[0].c_str())));
     locMap.clear();
     return (loc);
 }
@@ -281,7 +283,8 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
     parseKeyValue(content);
     for (unsigned long i = 0; i < keyValueMap.find("listen")->second.size(); i++)
     {
-        Server serv;
+        Server serv = Server();
+        // Server serv;
         
         if (keyValueMap.find("root") != keyValueMap.end())
             serv.setRoot(keyValueMap.find("root")->second[0]);
@@ -290,7 +293,7 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
         if (keyValueMap.find("listen") != keyValueMap.end())
             serv.setPort(atoi((keyValueMap.find("listen")->second[i]).c_str()));
         if (keyValueMap.find("client_max_body_size") != keyValueMap.end())
-            serv.setClientBodySize(atoi((keyValueMap.find("client_max_body_size")->second[0].c_str())));        
+            serv.setClientBodySize(atoi((keyValueMap.find("client_max_body_size")->second[0].c_str())));
         if (keyValueMap.find("index") != keyValueMap.end())
             serv.setIndex(keyValueMap.find("index")->second);
         if (keyValueMap.find("error_page") != keyValueMap.end())
@@ -299,9 +302,9 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
             serv.setAllowMethod(keyValueMap.find("limit_except")->second);
         if (locations.size() != 0)
             serv.setLocation(locations);
-        serv.setStatus(READY);
-        serv.setCgiPid(-1);
-        serv.getResponseClass().setStatusCode(0);
+        // serv.setStatus(READY);
+        // serv.setCgiPid(-1);
+        // serv.getResponseClass().setStatusCode(0);
         servers.push_back(serv);
     }
     locations.clear();
