@@ -211,6 +211,18 @@ void Server::setServerStatus(int serverStatus)
 	this->serverStatus = serverStatus;
 }
 
+void Server::addClient(int clientSocket)
+{
+	Client cli(clientSocket);
+	
+	clientMap.insert(std::pair< int, Client>(clientSocket, cli));
+	// clientMap[clientSocket] = client;
+}
+
+std::map< int, Client> Server::getClient()
+{
+	return (clientMap);
+}
 
 void Server::setErrorResponse(int statusCode)
 {

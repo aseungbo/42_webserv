@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <fcntl.h>
 #include "Location.hpp"
+#include "Client.hpp"
 
 #define NOT 0
 #define _DIR 1
@@ -51,6 +52,9 @@ class Server
 	{
 		enum METHOD_NAME {GET, HEAD, POST, DELETE};
 		private:
+			// Only test
+			std::map< int, Client > clientMap;
+			
 			
 			std::vector<std::string> hosts;//Host 클래스로 만들어서 호스트정보는 저장하고 메서드로 아이피 주소 퉤 하는 거 만들고싶다 
 			int port;
@@ -189,6 +193,10 @@ class Server
 			bool checkAllowMethod(std::vector<std::string> strVec, int method);
 			bool checkClientMaxSize(int locatoinClientMaxSize , int currRequestSize);
 			std::string autoIndexBody();
+			
+			
+			void addClient(int clientSocket);
+			std::map< int, Client> getClient();
 	};
 
 

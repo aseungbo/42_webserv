@@ -251,6 +251,12 @@ void WebServer::monitorKqueue()
                         // std::cout << " cgi dooooooon \n";
                     }
                 }
+                // client logic
+                // else if (serverMap[clientsServerMap[curr_event->ident]].getClient().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClient().end())
+                // {
+                //     std::cout << "[ curr ident ]" << curr_event->ident << std::endl;
+                // }
+                // Only test
                 else if (clients.find(curr_event->ident) != clients.end())
                 {
                     if ( serverMap[clientsServerMap[curr_event->ident]].getServerStatus() != SERVER_READY)
@@ -344,6 +350,10 @@ void WebServer::monitorKqueue()
                     // change_events(change_list, clientSocket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clients[clientSocket] = "";
                     clientsServerMap[clientSocket] = serverSocket;   
+                    // 서버에 클라이언트 추가 @@
+                    
+                    serverMap.find(curr_event->ident)->second.addClient(clientSocket);
+                    std::cout << "cli map size: " << serverMap.find(curr_event->ident)->second.getClient().size() << std::endl;
                 }
                  
                 
