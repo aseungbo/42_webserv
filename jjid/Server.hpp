@@ -186,7 +186,8 @@ class Server
 			void resetServerValues();
 			
 			void parseChunkedBody();
-
+			bool checkAllowMethod(std::vector<std::string> strVec, int method);
+			bool checkClientMaxSize(int locatoinClientMaxSize , int currRequestSize);
 			std::string autoIndexBody();
 	};
 

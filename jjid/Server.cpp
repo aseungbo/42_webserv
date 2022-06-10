@@ -460,6 +460,35 @@ void Server::preProcess(int type)
 	
 // }
 
+bool Server::checkAllowMethod(std::vector<std::string> strVec, int method)
+{
+	
+	for (int idx = 0 ; idx < strVec.size(); idx++)
+	{
+		if (getRequestClass().methodToNum(strVec[idx]) == method || method == -1)
+			return true;
+	}
+	return false;
+}
+
+bool Server::checkClientMaxSize(int locatoinClientMaxSize , int currRequestSize)
+{
+	if (locatoinClientMaxSize != 0)
+	{
+		if (currRequestSize <= locatoinClientMaxSize)
+			return true;
+		else
+			return false;
+	}
+	else
+	{
+		if (currRequestSize <= clientBodySize)
+			return true;
+		else
+			return false;
+	}
+}
+
 void Server::processMethod(std::vector <struct kevent> &change_list)
 {
 	//allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
@@ -482,7 +511,11 @@ void Server::processMethod(std::vector <struct kevent> &change_list)
 	}
 	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL || currLocation.getLocationType() == LOCATIONTYPE_CGI_DONE)
 	{
-		std::cout << "nomal !\n";
+		std::cout << "nomal !"<<std::endl;
+		if (!checkAllowMethod(currLocation.getAllowMethod(), currRequest.getStartLine().method))
+			return (setErrorResponse(405));
+		if (!checkClientMaxSize( currLocation.getClientBodySize(),currRequest.getBody().size()) )
+			return (setErrorResponse(413));
 		switch (currRequest.getStartLine().method)
 		{
 			case GET:
@@ -981,19 +1014,19 @@ void Server::postMethod()
 	// currResponse.setStatusCode(201);//이거 안바꿔야함
 	// std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
 	// if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
-	if (currRequest.getBody().size() != 0)
-	{
+	// if (currRequest.getBody().size() != 0)
+	// {
 		fcntl(fd, F_SETFL, O_NONBLOCK);
 		setFdManager(fd, getServerFd());
 		change_events(*changeList, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0,0,NULL);
 		// write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
-	}
-	else
-	{
-		std::cout << " 504:::"<<std::endl;
-		currResponse.setStatusCode(405);
-		close(fd);
-	}
+	// }
+	// else
+	// {
+	// 	std::cout << " 504:::"<<std::endl;
+	// 	currResponse.setStatusCode(405);
+	// 	close(fd);
+	// }
 	//write 처리후 fd 닫기 까먹지 않기 ><
 }
 
