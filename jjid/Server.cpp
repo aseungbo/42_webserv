@@ -422,6 +422,7 @@ void Server::preProcess(int type)
 	currLocation = whereIsLocation(pathTmp);
 	aliasRoot(currLocation, pathTmp);
 	checkPath(pathTmp);
+	std::cout << "ori pathTmp after: "<< pathTmp << std::endl;
 	currRequest.setPath(pathTmp);
 	// std::cout << "pathTmp: "<< pathTmp << std::endl;
 	// std::cout << "path2: "<< currRequest.getStartLine().path << std::endl;
@@ -851,9 +852,10 @@ void aliasRoot(Location currLocation, std::string &path)
 	
 	if (path[path.size() - 1 ] != '/')
 		path = path + "/";
-	std::string originPath = path;
+	std::string originPath = path; // [curr Rot]: ./[lo path]: /post_body[ori path]:/post_body/ ./post_body
 	std::cout << "[curr Rot]: "  << currRoot << "[lo path]: "<< locationPath << "[ori path]:" <<  originPath << std::endl;
 	path = currRoot + originPath.substr(locationPath.size(), originPath.size() - locationPath.size() ); 
+	
 }
 
 void Server::getMethod(int isHead)
@@ -935,9 +937,13 @@ void Server::postMethod()
 	else if (pathType == NOT)
 	{
 		std::cout << "not " << std::endl;
-		std::string dirPath = path.substr(0, path.find_last_of("/"));
-		std::cout << dirPath << std::endl;
-		mkdir(dirPath.c_str(),0777);
+		int findIdx = path.find_last_of("/");// ./posytsas
+		if (findIdx != 1)
+		{
+			std::string dirPath = path.substr(0, path.find_last_of("/"));
+			std::cout << dirPath << std::endl;
+			mkdir(dirPath.c_str(),0777);
+		}
 		if ((fd = open(path.c_str(), O_WRONLY | O_CREAT | O_NONBLOCK, 0644)) == -1)
 			return (setErrorResponse(500));
 	}
