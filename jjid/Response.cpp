@@ -79,7 +79,7 @@ std::string inHeadMethodNameIsHederMapToString(std::map <std::string, std::strin
 	// 	retString += iter->first + ": " + iter->second + "\r\n";
 	// }
 	// return retString;
-	return ("Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: close\r\nContent-Type: text/html;charset=UTF-8\r\n");//Location: https://www.naver.com\r\n");
+	return ("Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: keep-alive\r\nContent-Type: text/html;charset=UTF-8\r\n");//Location: https://www.naver.com\r\n");
 }
 
 std::string Response::setErrorResponse(int statusCode)
@@ -97,7 +97,7 @@ std::string Response::writeResponseMessage()
 	if (statusCode/100 != 2)
 		setErrorPage(statusCode);
 	std::cout <<  ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" + inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\r\n" + getBody()) << std::endl;
-	return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" + inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\r\n" + getBody()) +"\r\n";
+	return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" + inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\r\n" + getBody()) ;
 	
 	// std::string returnString = "";
 	// // this->statusCode = 200; // test

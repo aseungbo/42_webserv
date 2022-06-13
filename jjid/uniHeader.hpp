@@ -22,6 +22,10 @@
 #include <fcntl.h>
 
 #include <istream>
+#include <dirent.h>
+
+#include <sys/stat.h>
+#include <cstdio>
 
 void printErr(std::string str);
 

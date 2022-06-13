@@ -26,6 +26,7 @@ class WebServer
 			void mapFd(); // servers 시작 -> serverFd; -> serverMap
 			void monitorKqueue(); //->안의 기능은 따로 뺄예정
 			bool checkLastChunked(std::string const &str);
+			void disconnect_client(int client_fd, Server &currServer, std::map<int, int> &clientsServerMap);
 	};
 
 #endif
