@@ -224,20 +224,20 @@ void WebServer::monitorKqueue()
                             std::cout << "[parent]" << std::endl;
                             
 
-                            // std::string body;
+                            std::string body;
                             int n;
                             char buf[65536];
                             //exe 실행후
-                            if ((n = read(currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], buf,65535)) > 0)
+                            while ((n = read(currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], buf,65535)) > 0)
                             {
                                 std::cout<< "n:" << n <<std::endl;
                                 buf[n] = '\0';
-                                // body = buf;
-                                currServer.getClientMap()[fdManager[curr_event->ident]].addChunkedStr(buf);
+                                body += buf;
                                 // TODO : 클러스터에서 확인해보기 >< 꾸?
                                 
-                                // memset(buf, 0, 65000);
+                                memset(buf, 0, 65000);
                             }
+                            currServer.getClientMap()[fdManager[curr_event->ident]].addChunkedStr(body);
                             // std::cout << "execl buf: " << body <<std::endl;
                             // body =  "cgi done " + body;
                             // chunkedStr += body;
@@ -262,9 +262,9 @@ void WebServer::monitorKqueue()
                             // change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
                             if (findIter != currServer.getClientMap()[fdManager[curr_event->ident]].getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                                 findIter->second = std::to_string(currServer.getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody().size());
-                            waitpid(currServer.getClientMap()[fdManager[curr_event->ident]].getCgiPid(), NULL, WNOHANG);
                             fdManager.erase(curr_event->ident);//erase하나 더해야함
                             currServer.getClientMap()[fdManager[curr_event->ident]].setChunkedStr("");
+                            waitpid(currServer.getClientMap()[fdManager[curr_event->ident]].getCgiPid(), NULL, WNOHANG);
                         }
                         // std::cout << " cgi dooooooon \n";
                         
@@ -273,12 +273,12 @@ void WebServer::monitorKqueue()
                 else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
                 {
                     // if ()
-                    if ( serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getServerStatus() != SERVER_READY)
-                    {
-                        std::cout << "다음기회에!"<<std::endl;
-                        change_events(change_list, curr_event->ident, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                        break;
-                    }
+                    // if ( serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getServerStatus() != SERVER_READY)
+                    // {
+                    //     std::cout << "다음기회에!"<<std::endl;
+                    //     change_events(change_list, curr_event->ident, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                    //     break;
+                    // }
                     std::cout << "curr_event->ident" <<curr_event->ident<<std::endl;
                     std::cout <<"33"<<std::endl;
                     Server &currServer = serverMap[clientsServerMap[curr_event->ident]];
@@ -452,7 +452,7 @@ void WebServer::monitorKqueue()
                             // // if () //FD 다 쓴곳에서 다같이 삭제하는것도 방법임
                             //     fdManager.erase(curr_event->ident);
                             // std::cout << "writeSize:"<<writeSize<<", bodysize:"<<serverMap[clientsServerMap[fdManager[curr_event->ident]]].getRequestClass().getBody().size()<<std::endl;
-                            if (writeSize >= currStr.size() )
+                            if (writeSize >= serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody().size() )
                             {
                                 std::cout <<"cgi write end not else"<<std::endl;
                                 // serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setFdManager(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getServerFd());
