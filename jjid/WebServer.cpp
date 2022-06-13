@@ -262,9 +262,9 @@ void WebServer::monitorKqueue()
                             // change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
                             if (findIter != currServer.getClientMap()[fdManager[curr_event->ident]].getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                                 findIter->second = std::to_string(currServer.getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody().size());
-                            fdManager.erase(curr_event->ident);//erase하나 더해야함
                             currServer.getClientMap()[fdManager[curr_event->ident]].setChunkedStr("");
                             waitpid(currServer.getClientMap()[fdManager[curr_event->ident]].getCgiPid(), NULL, WNOHANG);
+                            fdManager.erase(curr_event->ident);//erase하나 더해야함
                         }
                         // std::cout << " cgi dooooooon \n";
                         
@@ -462,10 +462,10 @@ void WebServer::monitorKqueue()
                                 change_events(change_list, serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                                 
                                 std::cout << "read[fd]: " << serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
-                                fdManager.erase(curr_event->ident);
                                 std::cout << " hyopark is very cold"<<std::endl;
                                 writeSize = 0;
                                 serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setChunkedWriteSize(0);
+                                fdManager.erase(curr_event->ident);
                             }
                         }
                         else
@@ -474,10 +474,10 @@ void WebServer::monitorKqueue()
                             // serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setFdManager(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getClientSocket());
                             change_events(change_list, serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             std::cout << "read[fd]: " << serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0] << std::endl;
-                            fdManager.erase(curr_event->ident);
                             std::cout << " hyopark is very cold"<<std::endl;
                             writeSize = 0;
                             serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setChunkedWriteSize(0);
+                            fdManager.erase(curr_event->ident);
                         }
                     }
                     else if (serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE || serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
