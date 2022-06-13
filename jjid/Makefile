@@ -13,7 +13,8 @@ SRCS := Location.cpp \
 		uniHeader.cpp \
 		WebServer.cpp \
 		parseConf.cpp \
-		parseUtil.cpp
+		parseUtil.cpp \
+		Client.cpp
 
 
 OBJ_DIR := ./objs/
