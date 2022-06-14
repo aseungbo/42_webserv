@@ -61,6 +61,8 @@ class Client
 		std::vector <struct kevent> *changeList;
 		std::vector<Location> locations;
 		
+		std::string readBuf;
+		std::string FDreadBuf;
 		
 		int clientBodySize;
 		
@@ -68,6 +70,10 @@ class Client
 	public:
 		Client(int _clientSocket);
 		Client(){}
+		
+		std::string &getReadBuf(){return readBuf;}
+		std::string &getFDReadBuf(){return FDreadBuf;}
+		// void setReadBuf(char *buf){readBuf = buf;}
 		
 		int &getClientSocket();
 		std::string &getClientBody();		

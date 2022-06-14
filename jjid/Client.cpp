@@ -23,6 +23,8 @@ Client::Client(int _clientSocket)
 	currRequest.clearRequest();
 	envp = NULL;
 	getResponseClass().setStatusCode(0);
+	readBuf.clear();
+	FDreadBuf.clear();
 	
 }
 
@@ -62,8 +64,12 @@ void Client::setFdManager(int fd, int _clientFd)
 {
 std::cout <<"setFdManager" << fd<<", "<<_clientFd<<std::endl;
 	if (fdManager->find(fd) != fdManager->end()) 
+	{
+		std::cout << "매니저에 등록되면 안됨"<<std::endl;
 		exit(1);
-	fdManager->insert(std::pair<int, int>(fd,_clientFd));
+	}
+	(*fdManager).insert(std::pair<int, int>(fd,_clientFd));
+	std::cout <<"등록결과 클라이언트:"<< (*fdManager)[fd]<<std::endl;
 }
 
 std::string &Client::getChunkedStr()
@@ -688,8 +694,9 @@ void Client::readFile(int fd)
     // std::cout << "[ only for test read content ]" << std::endl;
     this->currResponse.setStatusCode(200);
     this->currResponse.setBody(content);
+    (*fdManager).erase(fd);
+    std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
     close(fd);
-    // fdManager->erase(fd);
     std::cout << currResponse.getStatusCode() << std::endl;
     std::cout << "readFile done" << std::endl;
     
@@ -722,6 +729,8 @@ void Client::writeFile(int fd)
 	// 	write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
 	write(fd, "any way done!", 14);
 	this->currResponse.setStatusCode(201);
+	(*fdManager).erase(fd);
+	std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
 	close(fd);
 	// fdManager->erase(fd);
 	std::cout << " wrtie File Done" << std::endl;
@@ -752,44 +761,6 @@ void Client::openFile(std::string path, int isHead)
 		this->currResponse.setStatusCode(405);
 		close(fd);
 	}
-	// std::cout << "\nopen call \n "<< path<<std::endl;
-	// // 파일 읽기 준비
-	// std::ifstream in(path);
-	
-	// std::string body;
-	// if (in.is_open()) {
-	// 	if (isHead == NO_HEAD)
-	// 	{
-	// 		// 위치 지정자를 파일 끝으로 옮긴다.
-	// 		in.seekg(0, std::ios::end);
-	// 		// 그리고 그 위치를 읽는다. (파일의 크기)
-	// 		int size = in.tellg();
-	// 		// 그 크기의 문자열을 할당한다.
-	// 		body.resize(size);
-	// 		// 위치 지정자를 다시 파일 맨 앞으로 옮긴다.
-	// 		in.seekg(0, std::ios::beg);
-	// 		// 파일 전체 내용을 읽어서 문자열에 저장한다.
-	// 		in.read(&body[0], size);
-	// 		// std::cout << body << std::endl;
-	// 	}
-	// }
-	// else {
-	// 	std::cout << path +  " " << "파일을 찾을 수 없습니다!" << std::endl;
-	// 	in.close();
-	// 	// throw (404);//catch해서 set다 호출할것 TODO
-	// 	return (setErrorResponse(404));
-	// 	// return;
-	// }
-	// if (isHead == NO_HEAD)
-	// 	this->currResponse.setStatusCode(200);
-	// else
-	// 	this->currResponse.setStatusCode(405);
-	// this->currResponse.setBody(body);
-	
-	// std::cout << "whereis test::::\n";
-	// std::cout << "test:::: " << currResponse.writeResponseMessage()<<std::endl;
-	// in.close();
-	// return ;
 }
 
 std::string whereIsRoot(std::string path, Location currLocation)
@@ -973,10 +944,12 @@ void Client::resetServerValues()
 	setCgiPid(-1);
 	readFd[0] = -1;
 	readFd[1] = -1;
-	writeFd[1] = -1;
+	writeFd[0] = -1;
 	writeFd[1] = -1;
 	// TODO fdFlag 초기화?
 	serverStatus = SERVER_READY;
+	readBuf.clear();
+	FDreadBuf.clear();
 }
 void Client::parseChunkedBody()
 {

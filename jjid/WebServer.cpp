@@ -64,7 +64,7 @@ void WebServer::listenServers()
 		serverAddr.sin_port = htons(this->servers[idx].getPort());
 		if (bind(serverSocketFD, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1)
 			printErr("bind error");
-		if (listen(serverSocketFD, 200) == -1)
+		if (listen(serverSocketFD, 1000) == -1)
 			printErr("listen error");
 		fcntl(serverSocketFD, F_SETFL, O_NONBLOCK);//넌 이제부터 논블로킹이야
 		this->serverMap.insert(std::pair<int, Server>(serverSocketFD, servers[idx]));
@@ -206,12 +206,14 @@ void WebServer::monitorKqueue()
                     Server &currServer = serverMap[clientsServerMap[fdManager[curr_event->ident]]];
                     std::cout << "[Read] curr ident: " << curr_event->ident << std::endl;
                     std::cout << "locatype " << currServer.getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() << std::endl;
+                    serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setServerStatus(SERVER_READY);
                     if (currServer.getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL || currServer.getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE)
                     {
+                        change_events(change_list, fdManager[curr_event->ident], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
                         currServer.getClientMap()[fdManager[curr_event->ident]].readFile(curr_event->ident);//일반 get 메소드 
-                        std::cout <<"fd:" <<fdManager[curr_event->ident]<<"statecod " <<currServer.getClientMap()[fdManager[curr_event->ident]].getResponseClass().getStatusCode()<<std::endl;
-                        change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // add event
-                        fdManager.erase(curr_event->ident);//씨지아이던은 따로해야할지두?
+                        std::cout << "리드파일 끝나고 잘 지워졌니?" << (int)(fdManager.find(curr_event->ident) != fdManager.end()) << std::endl;
+                        // std::cout <<"fd:" <<fdManager[curr_event->ident]<<"statecod " <<currServer.getClientMap()[fdManager[curr_event->ident]].getResponseClass().getStatusCode()<<std::endl;
+                        // fdManager.erase(curr_event->ident);//씨지아이던은 따로해야할지두?
                         // std::cout << "hell"<<currServer.getClientMap()[fdManager[curr_event->ident]].getResponseClass().getStatusCode()<<std::endl;
                         // std::cout << "fdManager[curr_event->ident]"<<fdManager[curr_event->ident]<<std::endl;
                     }
@@ -226,26 +228,24 @@ void WebServer::monitorKqueue()
 
                             std::string body;
                             int n;
-                            char buf[65536];
+                            // char buf[65536];
                             //exe 실행후
-                            while ((n = read(currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], buf,65535)) > 0)
+                            currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf().clear();
+                            currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf().resize(65536);
+                            while ((n = read(curr_event->ident, &(currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf())[0], 65535)) > 0)
+                            // while ((n = read(currServer.getClientMap()[fdManager[fdManager[curr_event->ident]]].getReadFd()[0], buf, 65535)) > 0)
                             {
+                                currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf().resize(n);
                                 std::cout<< "n:" << n <<std::endl;
-                                buf[n] = '\0';
-                                body += buf;
+                                currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf()[n] = '\0';
+                                body += currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf();
                                 // TODO : 클러스터에서 확인해보기 >< 꾸?
                                 
-                                memset(buf, 0, 65000);
+                                // memset(currServer.getClientMap()[curr_event->ident].getFDReadBuf(), 0, 65000);
                             }
                             currServer.getClientMap()[fdManager[curr_event->ident]].addChunkedStr(body);
-                            // std::cout << "execl buf: " << body <<std::endl;
-                            // body =  "cgi done " + body;
-                            // chunkedStr += body;
+                            std::cout << "close call" << currServer.getClientMap()[fdManager[curr_event->ident]].getWriteFd()[0] <<", "<<currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[1]<<std::endl;
                             
-                            // waitpid(currServer.getCgiPid(), NULL, WNOHANG);
-                            // wait(pid,NULL,0);
-                            close(currServer.getClientMap()[fdManager[curr_event->ident]].getWriteFd()[0]);
-                            close(currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[1]);
                         }
                         std::cout << "!@#$%^ size: " <<currServer.getClientMap()[fdManager[curr_event->ident]].getChunkedStr().size()<<std::endl;
                         if (currServer.getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody().size() <= currServer.getClientMap()[fdManager[curr_event->ident]].getChunkedStr().size())//추후에 \r\n 이후거만 비교 해서 ==으로 수정
@@ -263,30 +263,55 @@ void WebServer::monitorKqueue()
                             if (findIter != currServer.getClientMap()[fdManager[curr_event->ident]].getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                                 findIter->second = std::to_string(currServer.getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody().size());
                             currServer.getClientMap()[fdManager[curr_event->ident]].setChunkedStr("");
-                            waitpid(currServer.getClientMap()[fdManager[curr_event->ident]].getCgiPid(), NULL, WNOHANG);
-                            fdManager.erase(curr_event->ident);//erase하나 더해야함
+                            std::cout << "close call" << currServer.getClientMap()[fdManager[curr_event->ident]].getWriteFd()[1] <<", "<<currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[0]<<std::endl;
+                            // close(currServer.getClientMap()[fdManager[curr_event->ident]].getWriteFd()[1]);
+                            // close(currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[0]);
+                            int tmpWriteFd = currServer.getClientMap()[fdManager[curr_event->ident]].getWriteFd()[0];
+                            int tmpReadFd = currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[1];
+                            close(tmpWriteFd);
+                            close(tmpReadFd);
+                            tmpWriteFd = currServer.getClientMap()[fdManager[curr_event->ident]].getWriteFd()[1];
+                            tmpReadFd = currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[0];
+
+                            std::cout << "erase call" << tmpWriteFd <<", "<<tmpReadFd<<std::endl;
+                            
+                            int tmpPid = currServer.getClientMap()[fdManager[curr_event->ident]].getCgiPid();
+                            fdManager.erase(tmpWriteFd);
+                            fdManager.erase(tmpReadFd);
+                            close(tmpWriteFd);
+                            close(tmpReadFd);
+                            std::cout << "erase result" << (int)(fdManager.find(tmpWriteFd) != fdManager.end()) <<", "<<(int)(fdManager.find(tmpReadFd) != fdManager.end())<<std::endl;
+                            waitpid(tmpPid, NULL, WNOHANG);
+                            
+                            // fdManager.erase(curr_event->ident);//erase하나 더해야함
                         }
                         // std::cout << " cgi dooooooon \n";
                         
                     }
                 }
-                else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() &&serverMap.find(clientsServerMap[curr_event->ident]) != serverMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
                 {
                     // if ()
-                    // if ( serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getServerStatus() != SERVER_READY)
+                        // std::cout << "다음기회에!"<<std::endl;
+                        // change_events(change_list, curr_event->ident, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                    // if ( serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getServerStatus() == SERVER_READY)
                     // {
-                    //     std::cout << "다음기회에!"<<std::endl;
-                    //     change_events(change_list, curr_event->ident, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                    //     break;
-                    // }
+                        // break;}
+                    
                     std::cout << "curr_event->ident" <<curr_event->ident<<std::endl;
                     std::cout <<"33"<<std::endl;
                     Server &currServer = serverMap[clientsServerMap[curr_event->ident]];
                     
                     std::cout <<"c" << currServer.getClientMap()[curr_event->ident].getServerStatus()<<std::endl;
-                    char buf[65536];
-                    memset(buf,0,65536);
-                    int n = read(curr_event->ident, buf, sizeof(buf) - 1);
+                    // char buf[65536];
+                    // memset(buf,0,65536);
+                    // int n = read(curr_event->ident, buf, sizeof(buf) - 1);
+                    // memset(currServer.getClientMap()[curr_event->ident].getReadBuf(),0,65536);
+                    // &data[0]
+                    currServer.getClientMap()[curr_event->ident].getReadBuf().clear();
+                    currServer.getClientMap()[curr_event->ident].getReadBuf().resize(65536);
+                    int n = read(curr_event->ident, &(currServer.getClientMap()[curr_event->ident].getReadBuf())[0], 65535);
+                    currServer.getClientMap()[curr_event->ident].getReadBuf().resize(n);
                     // std::cout << "[ after read ]" << std::endl;
                     if (n <= 0)
                     {
@@ -305,8 +330,8 @@ void WebServer::monitorKqueue()
                     
                         std::cout <<"44"<<std::endl;
                         // std::cout << "after read n:" << n <<"fd:: " << curr_event->ident<< std::endl;
-                        buf[n] = '\0';
-                        currServer.getClientMap()[curr_event->ident].getClientBody() += buf;
+                        currServer.getClientMap()[curr_event->ident].getReadBuf()[n] = '\0';
+                        currServer.getClientMap()[curr_event->ident].getClientBody() += currServer.getClientMap()[curr_event->ident].getReadBuf();
                         // Server &currSever = serverMap[clientsServerMap[curr_event->ident]];//TODO::  청크드 로직에서 메세지의 끝은 rn 인데 우리는 rn이고 뭐고 그냥 때려 넣음
                         std::cout <<"!"<<std::endl;
                         if (currServer.getClientMap()[curr_event->ident].getStatus() == DONE)
@@ -315,7 +340,7 @@ void WebServer::monitorKqueue()
                             // std::cout << "done add body if"<< std::endl;
                             // std::cout << "done add body if  before:" << currServer.getClientMap()[curr_event->ident].getRequestClass().getBody()<< std::endl;
                             // currServer.getClientMap()[curr_event->ident].getRequestClass().addBody(buf);
-                            currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
+                            // currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                             currServer.getClientMap()[curr_event->ident].getRequestClass().addBody(currServer.getClientMap()[curr_event->ident].getClientBody());
                             currServer.getClientMap()[curr_event->ident].getClientBody().clear();//0612추가
                             // std::cout << "done add body if  after:" <<currServer.getClientMap()[curr_event->ident].getRequestClass().getBody()<< std::endl;
@@ -330,7 +355,8 @@ void WebServer::monitorKqueue()
                                 // 바디 rn기준으로 잘라넣을 거 추가;
                                 currServer.getClientMap()[curr_event->ident].parseChunkedBody();
                                 currServer.getClientMap()[curr_event->ident].setStatus(CHUNKED_FIN);
-                                currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
+                                
+                                // currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                                 change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
                             else//지워도됨
@@ -352,7 +378,7 @@ void WebServer::monitorKqueue()
                                     // 바디 rn기준으로 잘라넣을 거 추가;
                                     currServer.getClientMap()[curr_event->ident].parseChunkedBody();
                                     currServer.getClientMap()[curr_event->ident].setStatus(CHUNKED_FIN);
-                                    currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
+                                    // currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                                     change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                                 }
                                 else
@@ -361,12 +387,13 @@ void WebServer::monitorKqueue()
                             else
                             {
                                 currServer.getClientMap()[curr_event->ident].setStatus(DONE);
-                                currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
+                                // currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                                 change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
 
                         }
                         
+                    // }
                     }
                 }
                 //알맞은서버찾아서 이터든 뭐든 반환?
@@ -397,14 +424,20 @@ void WebServer::monitorKqueue()
                 
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
+                    // if (serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getServerStatus() == SERVER_READY)
+                    // {
+                        // serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setServerStatus(SERVER_ING);
                     static int writeSize = 0;
                     // if (serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getChunkedWriteSize() == 0)
                     //    serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setChunkedSize(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody().size()) ;
                     
                     // Server &currServer = serverMap[fdManager[curr_event->ident]];
                     // std::cout << "type :: "<< serverMap[fdManager[curr_event->ident]].getCurrLocation().getLocationType() <<std::endl;;
+                    
+                    // serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setServerStatus(SERVER_ING);
                     if (serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI)//cgi처리로직 조건
                     {
+                    
                         std::string &currStr = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody();
                         std::cout << "size:::" << serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getRequestClass().getBody().size()<<std::endl;
                         int n;
@@ -422,11 +455,15 @@ void WebServer::monitorKqueue()
                             {
                                 std::string body;
                                 char buf[1024];
-
+                                
+                                int tmpWriteFd = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getWriteFd()[1];
+                                int tmpReadFd = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0];
+                                
+                                
                                 dup2(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[1],1);
-                                close(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0]);
+                                close(tmpReadFd);
                                 dup2(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getWriteFd()[0],0);
-                                close(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getWriteFd()[1]);
+                                close(tmpWriteFd);
                                 
                                 char *test[2] ;
                                 test[0] = (char *)(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getCgiPath().c_str());
@@ -445,7 +482,7 @@ void WebServer::monitorKqueue()
                             std::cout << "혹쉬!!!:" << fdManager[curr_event->ident]<<std::endl;
                             std::cout << "혹쉬!!!:" << fdManager[serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0]]<<std::endl;
                             // serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setFdManager(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0]  ,serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]]   );
-                            change_events(change_list, serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            // 
                             
                             // fcntl(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getReadFd()[0], F_SETFL, O_NONBLOCK);
                             
@@ -465,8 +502,11 @@ void WebServer::monitorKqueue()
                                 std::cout << " hyopark is very cold"<<std::endl;
                                 writeSize = 0;
                                 serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setChunkedWriteSize(0);
-                                fdManager.erase(curr_event->ident);
+                                // fdManager.erase(curr_event->ident);//굳이여기서하지말고 다보낸 후 다 읽은뒤 지워보자
                             }
+                            else
+                                change_events(change_list, serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                        
                         }
                         else
                         {
@@ -477,43 +517,34 @@ void WebServer::monitorKqueue()
                             std::cout << " hyopark is very cold"<<std::endl;
                             writeSize = 0;
                             serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setChunkedWriteSize(0);
-                            fdManager.erase(curr_event->ident);
+                            // fdManager.erase(curr_event->ident);
                         }
+                    
                     }
                     else if (serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE || serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
                     {
                         serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].writeFile(curr_event->ident);
-                        fdManager.erase(curr_event->ident);
+                        // fdManager.erase(curr_event->ident);
                     }
+                    
                     // continue;
                     
                 }
-                else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() &&serverMap.find(clientsServerMap[curr_event->ident]) != serverMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                // else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
                 {
                     Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
                     
-                    // std::cout << "!!!!! 0 "<<std::endl;
-                    // std::cout << "curr_event->ident"<<curr_event->ident<<std::endl;
-                    // std::cout << currSever.getClientMap()[curr_event->ident].getResponseClass().getStatusCode()<<std::endl;
-                //  std::cout << currSever.getStatus() <<std::endl;
-                if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getStatusCode() != 0)
+                    if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getStatusCode() != 0)
                     {
-                        Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
-                        // std::cout << "!!!!! 0 "<<std::endl;
-                        std::cout <<"호쌍새찌"<< curr_event->ident << std::endl;
-                        
-                        // std::cout << "write3" <<std::endl;
-                        // std::cout << "msf: " << ResponseMessage << std::endl;
-                        // std::cout << "size" << ResponseMessage.size() << std::endl;
-                        // std::cout << "curr identttttt: " << curr_event->ident << std::endl;
-                        // fcntl(curr_event->ident,F_SETFL, O_NONBLOCK);
-                            
-
-                        // std::vector< std::string > chunkedVec = makeChunkedVec(serverMap[clientsServerMap[curr_event->ident]].getResponseClass().getBody());
+                        if(currSever.getClientMap()[curr_event->ident].getServerStatus() == SERVER_READY)
+                        {
+                        // Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
+                        currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                         static int vecIdx = -1;
                         if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBody().size() > 65535)
                         {
-                            std::cout << " 요기" <<std::endl;
+                            std::cout << " 요기" <<curr_event->ident<<std::endl;
                             std::string tmpHeader;
                             if (vecIdx == -1)
                             {
@@ -523,6 +554,7 @@ void WebServer::monitorKqueue()
                                 std::cout << tmpHeader <<std::endl;
                                 write(curr_event->ident, tmpHeader.c_str(), tmpHeader.size());
                                 vecIdx++;
+                                currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_READY);
                             }
                             else if (vecIdx < serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec.size())
                             {
@@ -530,13 +562,20 @@ void WebServer::monitorKqueue()
                                 // std::cout << "얼만큼?"<< serverMap[clientsServerMap[curr_event->ident]].getResponseClass().chunkedVec[vecIdx].size() <<std::endl;
                                     std::cout << " 조기" <<std::endl;
                                 // std::cout << "뭘?" << serverMap[clientsServerMap[curr_event->ident]].getResponseClass().chunkedVec[vecIdx] <<std::endl;
+                                // fcntl(curr_event->ident, F_SETFL, O_NONBLOCK);//넌 이제부터 논블로킹이야
+                                std::cout << "ident"<<curr_event->ident<< "size:"<< serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[vecIdx].size()<<std::endl;
                                 if (write(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[vecIdx].c_str(), serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[vecIdx].size()) == -1)
                                     {
+                                    std::cout << " 더빠른 고장나땅" <<std::endl;
                                     disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
                                     std::cout << "고장나땅!" <<std::endl;
-                                    exit(1);
+                                    // exit(1);
+                                    break;
                                     }
+                                    std::cout << " 조기2" <<std::endl;
                                 vecIdx++;
+                                
+                                currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_READY);
                             }
                             else
                             {
@@ -548,6 +587,7 @@ void WebServer::monitorKqueue()
                                 // currSever.getClientMap().erase(curr_event->ident);
                                 currSever.getClientMap()[curr_event->ident].resetServerValues();
                                 vecIdx = -1;
+                                // currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                             }
                         }
                         else
@@ -560,20 +600,12 @@ void WebServer::monitorKqueue()
                             }
                             else
                             {
-                                // serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getClientBody().clear();
-                                // clientsServerMap.erase(curr_event->ident);
-                                // currSever.getClientMap()[curr_event->ident].getResponseClass().setStatusCode(0);
-                                // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
-                                // currSever.getClientMap()[curr_event->ident].resetServerValues();
-                                // clientsServerMap.erase(curr_eclientBodySizevent->ident);
-                                // currSever.getClientMap().erase(curr_event->ident);
                                 currSever.getClientMap()[curr_event->ident].resetServerValues();//왠지 여기클라이언트 삭제 할지말지고민해바야할덧 0612 -> 안해도되지않을까 왜냐면 리셋만하니까... 근데 현스키 케큐는 바디로 판단하기때문에 클라이언트 조건을 바꿀 필요가있음... 지금은 클라이언트 서버 맵으로 보는데 사실은 서버에 클라이언트가 있는지 find해야할 덧? 그게아니면 여기서 잘 지우는게 필요한데 지우면 안될것같은디 음... 1번 서버클라이언트만 지워보기 2번 조건을 바꿔보기
-                                // currSever.getClientMap().erase(curr_event->ident);
                             }
                         }
                         
                         //지우기 Server : curr들 초기화 initServerCurrResponseAndRequestAndLocation
-
+                        }
                     }
                     else if (currSever.getClientMap()[curr_event->ident].getStatus()== DONE)
                     {
