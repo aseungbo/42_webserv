@@ -76,7 +76,7 @@ std::string &Client::getChunkedStr()
 {
 	return (chunkedStr);
 }
-void Client::addChunkedStr(std::string str)
+void Client::addChunkedStr(std::string& str)
 {
 	chunkedStr += str;
 }
@@ -171,7 +171,6 @@ std::string Client::autoIndexBody()
 	DIR *dir = opendir(currRequest.getStartLine().path.c_str());
     struct dirent *dp;
 
-	std::cout << "[ Curr path ]" << currRequest.getStartLine().path << std::endl;
     body += "<h1>Index of /</h1><hr><pre>";
     for (dp = readdir(dir); dp; dp = readdir(dir))
     {

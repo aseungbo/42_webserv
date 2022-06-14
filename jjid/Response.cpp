@@ -130,6 +130,11 @@ void Response::setBody(std::string body)
 	this->body = body;
 }
 
+int Response::getBodySize()
+{
+	return (body.size());
+}
+
 int Response::getStatusCode()
 {
 	return (statusCode);

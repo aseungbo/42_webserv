@@ -22,6 +22,7 @@ class Response
 			void setBody(std::string body);
 			
 			int getStatusCode();
+			int getBodySize();
 			Header getHeader();
 			std::string getBody();
 			

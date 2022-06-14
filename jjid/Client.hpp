@@ -141,7 +141,7 @@ class Client
 		void setLocations (std::vector<Location> _locations){locations = _locations;}
 		std::vector<Location> getLocations (){return (locations);}
 		std::string &getChunkedStr();
-		void addChunkedStr(std::string str);
+		void addChunkedStr(std::string& str);
 		void setChunkedStr(std::string str);
 		// int *getCgiWriteFd();
 		// int *getCgiReadFd();

@@ -226,24 +226,25 @@ void WebServer::monitorKqueue()
                             std::cout << "[parent]" << std::endl;
                             
 
-                            std::string body;
+                            // std::string body;
                             int n;
                             // char buf[65536];
                             //exe 실행후
                             currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf().clear();
                             currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf().resize(65536);
-                            while ((n = read(curr_event->ident, &(currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf())[0], 65535)) > 0)
+                            if ((n = read(curr_event->ident, &(currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf())[0], 65535)) > 0)
                             // while ((n = read(currServer.getClientMap()[fdManager[fdManager[curr_event->ident]]].getReadFd()[0], buf, 65535)) > 0)
                             {
                                 currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf().resize(n);
                                 std::cout<< "n:" << n <<std::endl;
                                 currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf()[n] = '\0';
-                                body += currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf();
+                                // body += currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf();
+                                currServer.getClientMap()[fdManager[curr_event->ident]].addChunkedStr(currServer.getClientMap()[fdManager[curr_event->ident]].getFDReadBuf());
                                 // TODO : 클러스터에서 확인해보기 >< 꾸?
                                 
                                 // memset(currServer.getClientMap()[curr_event->ident].getFDReadBuf(), 0, 65000);
                             }
-                            currServer.getClientMap()[fdManager[curr_event->ident]].addChunkedStr(body);
+                            // currServer.getClientMap()[fdManager[curr_event->ident]].addChunkedStr(body);
                             std::cout << "close call" << currServer.getClientMap()[fdManager[curr_event->ident]].getWriteFd()[0] <<", "<<currServer.getClientMap()[fdManager[curr_event->ident]].getReadFd()[1]<<std::endl;
                             
                         }
@@ -315,15 +316,15 @@ void WebServer::monitorKqueue()
                     // std::cout << "[ after read ]" << std::endl;
                     if (n <= 0)
                     {
+                        if (currServer.getClientMap()[curr_event->ident].getServerStatus() == SERVER_ING)
+                            continue ;
                         if (n < 0)
                             printErr("client read error!");
                         std::cout << "read:diconnect call" <<std::endl;
                         // currServer.setStatus(READY);
                         // currServer.getClientMap()[curr_event->ident].resetServerValues();
                         // clientsServerMap.erase(curr_event->ident);
-                        disconnect_client(curr_event->ident, currServer, clientsServerMap);// 0612역시 여기서 냅다 초기화날려야할지두
-                        
-                        
+                        disconnect_client(curr_event->ident, currServer, clientsServerMap);// 0612역시 여기서 냅다 초기화날려야할지두                        
                     }
                     else
                     {
@@ -453,8 +454,8 @@ void WebServer::monitorKqueue()
                                 serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].forkCgiPid();
                             if (serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCgiPid() == 0)
                             {
-                                std::string body;
-                                char buf[1024];
+                                // std::string body;
+                                // char buf[1024];
                                 
                                 int tmpWriteFd = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getWriteFd()[1];
                                 int tmpReadFd = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0];
@@ -473,7 +474,7 @@ void WebServer::monitorKqueue()
                                     write(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[1], "errororor\n", 11);
                                     exit(1);
                                 }
-                                exit(1);
+                                // exit(1);
                             }
                             // serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].setFdManager(serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getReadFd()[0], serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getClientSocket());
                             std::cout << "먼지:" << serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]].getCurrLocation().getLocationType() <<std::endl;
@@ -543,6 +544,7 @@ void WebServer::monitorKqueue()
                         currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                         static int vecIdx = -1;
                         if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBody().size() > 65535)
+                        // if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBodySize() > 65535)
                         {
                             // std::cout << " 요기" <<curr_event->ident<<std::endl;
                             std::string tmpHeader;
