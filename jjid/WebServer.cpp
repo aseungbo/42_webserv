@@ -500,7 +500,7 @@ void WebServer::monitorKqueue()
                     {
                         Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
                         // std::cout << "!!!!! 0 "<<std::endl;
-                        std::cout <<"호쌍새찌"<< curr_event->ident << std::endl;
+                        // std::cout <<"호쌍새찌"<< curr_event->ident << std::endl;
                         
                         // std::cout << "write3" <<std::endl;
                         // std::cout << "msf: " << ResponseMessage << std::endl;
@@ -513,7 +513,7 @@ void WebServer::monitorKqueue()
                         static int vecIdx = -1;
                         if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBody().size() > 65535)
                         {
-                            std::cout << " 요기" <<std::endl;
+                            // std::cout << " 요기" <<std::endl;
                             std::string tmpHeader;
                             if (vecIdx == -1)
                             {
@@ -526,9 +526,10 @@ void WebServer::monitorKqueue()
                             }
                             else if (vecIdx < serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec.size())
                             {
+                                std::cout <<"chunk response process: "<< vecIdx << " / " << serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec.size() << std::endl;
                                 // std::cout << "보내는중" <<vecIdx<<std::endl;
                                 // std::cout << "얼만큼?"<< serverMap[clientsServerMap[curr_event->ident]].getResponseClass().chunkedVec[vecIdx].size() <<std::endl;
-                                    std::cout << " 조기" <<std::endl;
+                                    // std::cout << " 조기" <<std::endl;
                                 // std::cout << "뭘?" << serverMap[clientsServerMap[curr_event->ident]].getResponseClass().chunkedVec[vecIdx] <<std::endl;
                                 if (write(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[vecIdx].c_str(), serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[vecIdx].size()) == -1)
                                     {
