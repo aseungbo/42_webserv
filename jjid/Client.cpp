@@ -973,7 +973,7 @@ void Client::resetServerValues()
 	setCgiPid(-1);
 	readFd[0] = -1;
 	readFd[1] = -1;
-	writeFd[1] = -1;
+	writeFd[0] = -1;
 	writeFd[1] = -1;
 	// TODO fdFlag 초기화?
 	serverStatus = SERVER_READY;
