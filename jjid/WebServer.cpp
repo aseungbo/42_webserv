@@ -370,6 +370,13 @@ void WebServer::monitorKqueue()
                             // std::cout << "header if "<< std::endl;
                             std::cout << "request header in ident:"<<curr_event->ident<<std::endl;
                             currServer.getClientMap()[curr_event->ident].getRequestClass().parseRequestMessage(currServer.getClientMap()[curr_event->ident].getClientBody());
+                            // if (currServer.getClientMap()[curr_event->ident].getRequestClass().getStartLine().method == 400)
+                            // {
+                            //     // currServer.getClientMap()[curr_event->ident].getResponseClass().setStatusCode(400);
+                            //     // change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            // }
+                            // else
+                            {
                             // std::cout << "body 1024 under : " << currServer.getClientMap()[curr_event->ident].getClientBody() << std::endl;
                             // std::cout << "body 1024 under :" << currServer.getClientMap()[curr_event->ident].getRequestClass().getBody() << ")"<< std::endl;
                             std::map <std::string, std::string>::iterator chunkedIter = currServer.getClientMap()[curr_event->ident].getRequestClass().getHeader().getContent().find("Transfer-Encoding");
@@ -393,6 +400,7 @@ void WebServer::monitorKqueue()
                                 // currServer.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
                                 change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
+                        }
 
                         }
                         
@@ -538,7 +546,10 @@ void WebServer::monitorKqueue()
                 {
                     Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
                     
-                    if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getStatusCode() != 0)
+                    if (currSever.getClientMap()[curr_event->ident].getRequestClass().getStartLine().method == 400)
+                        currSever.getClientMap()[curr_event->ident].getResponseClass().setStatusCode(400);
+                    
+                    if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getStatusCode() != 0 )
                     {
                         if(currSever.getClientMap()[curr_event->ident].getServerStatus() == SERVER_READY)
                         {

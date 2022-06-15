@@ -8,7 +8,8 @@ std::vector<std::string> Request::splitRequestMessage(std::string str, char deli
     // istringstream은 istream을 상속받으므로 getline을 사용할 수 있다.
     while (std::getline(iss, buffer, delimiter))
     {
-        result.push_back(buffer);               // 절삭된 문자열을 vector에 저장
+        std::cout << "qwer"<<buffer<<std::endl;
+		result.push_back(buffer);               // 절삭된 문자열을 vector에 저장
 	}
 	
 	// result.push_back("\n");
@@ -75,11 +76,18 @@ std::pair <std::string, std::string> Request::initRequestHeader(const std::strin
 	// std::cout << header << std::endl;
 	std::vector<std::string> splitHeader = splitRequestMessage(header, ':');
 	
+	if (splitHeader[0].size() == 0)
+	{
+		this->startline.method = 400;
+		throw( StartLineErr() );
+		// return (temp);
+	}
 	if (splitHeader.size() > 2)
 	{
 		for (int i = 2; i < splitHeader.size(); i++)
 			splitHeader[1] += (":" + splitHeader[i]);
 	}
+	
 	std::pair<std::string, std::string> temp;
 	temp.first = splitHeader[0];
 	temp.second = splitHeader[1].substr(1,splitHeader[1].size() - 2);//TODO:공백날리기 다시생각 하기~ 스페이스 여러개 또는 없이 왔을때
@@ -103,6 +111,7 @@ void Request::clearRequest()
 }
 void Request::parseRequestMessage(std::string requestMessage)
 {
+	
 	if (requestMessage.size() == 0)
 		return ;
 	clearRequest();
@@ -117,6 +126,8 @@ void Request::parseRequestMessage(std::string requestMessage)
 		else
 			return (printErr("no requset"));
 		std::vector<std::string>::iterator iter = parseRequest.begin() + 1; // jji : 찝찝
+	try
+	{
 		for (; (*iter) != "\r" && iter != parseRequest.end(); iter++)
 			header.getContent().insert(initRequestHeader(*iter));
 		if (requestMessage.size() >= requestMessage.find("\r\n\r\n") + 4)
@@ -129,6 +140,11 @@ void Request::parseRequestMessage(std::string requestMessage)
 		// 		body += (*iter + "\n");
 		// 	else
 		// 		body += (*iter);
+	}
+	catch( std::exception e)
+	{
+		return ;
+	}
 }
 
 t_StartLine Request::getStartLine()
