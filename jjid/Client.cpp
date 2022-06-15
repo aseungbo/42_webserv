@@ -662,7 +662,7 @@ std::vector<std::string > makeChunkedVec(std::string originStr)
 
 	while (idx < originStr.size())
 	{
-		std::string currString = originStr.substr(idx,65000);
+		std::string currString = originStr.substr(idx,1024);
 		idx += currString.size();
 		
 		// dec2hex(currString.size(), )

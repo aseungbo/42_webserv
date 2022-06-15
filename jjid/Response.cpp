@@ -140,7 +140,7 @@ Header Response::getHeader()
 	return (header);
 }
 
-std::string Response::getBody()
+std::string &Response::getBody()
 {
 	return (body);
 }
