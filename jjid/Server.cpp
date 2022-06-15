@@ -155,10 +155,10 @@ std::vector<Location> Server::getLocations()
 void Server::addClient(int clientSocket)
 {
 	// Client cli(clientSocket);
-	std::cout << "addclient call!"<< std::endl;
+	// std::cout << "addclient call!"<< std::endl;
 	Client cli = Client(clientSocket);
 	
-	
+	std::cout << "Made client socket fd: " << clientSocket << std::endl;
 	cli.linkChangeList(*changeList);
 	cli.linkFdManager(*fdManager);
 	// clientMap[clientSocket] = client;
