@@ -70,7 +70,8 @@ class Client
 	public:
 		Client(int _clientSocket);
 		Client(){}
-		
+		int vecIdx;
+		int writeCnt;
 		std::string &getReadBuf(){return readBuf;}
 		std::string &getFDReadBuf(){return FDreadBuf;}
 		// void setReadBuf(char *buf){readBuf = buf;}

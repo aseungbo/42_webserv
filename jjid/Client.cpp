@@ -23,8 +23,11 @@ Client::Client(int _clientSocket)
 	currRequest.clearRequest();
 	envp = NULL;
 	getResponseClass().setStatusCode(0);
+	getResponseClass().CgiHeader = "";
 	readBuf.clear();
 	FDreadBuf.clear();
+	vecIdx = -1;
+	writeCnt = 0;
 	
 }
 
@@ -925,8 +928,11 @@ void Client::resetServerValues()
 	chunkedStr = "";
 	chunkedWriteSize = 0;
 	chunkedSize = 0;
+	vecIdx = -1;
+	writeCnt = 0;
 	// getRequestClass().getStartLine().http = "";
 	getRequestClass().setPath("");
+	getResponseClass().CgiHeader = "";
 	currRequest.clearRequest();
 	
 	if (getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE)

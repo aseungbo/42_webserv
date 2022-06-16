@@ -555,37 +555,74 @@ void WebServer::monitorKqueue()
                     
                     if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getStatusCode() != 0 )
                     {
-                        int n = 0;
-                        if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].vecIdx == -1)
+                        // if(currSever.getClientMap()[curr_event->ident].getServerStatus() == SERVER_READY)
                         {
-                            std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().writeResponseMessage();
-                            n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size());
-                            if (n == -1)
+                        // Server &currSever = serverMap[clientsServerMap[curr_event->ident]];
+                        currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_ING);
+                        // static int vecIdx = -1;
+                        // currSever.getClientMap()[curr_event->ident].vecIdx = -1;
+                        if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBody().size() > 65535)
+                        {
+                            // std::cout << " 요기" <<curr_event->ident<<std::endl;
+                            std::string tmpHeader;
+                            if (currSever.getClientMap()[curr_event->ident].vecIdx == -1)
                             {
-                                printErr("client write err");
-                                // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
+                                int statusCode = serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getStatusCode();
+                                
+                                tmpHeader = "HTTP/1.1 " + std::to_string(statusCode) + " " + serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().statusMessage(statusCode) + "\r\n";
+                                tmpHeader += "Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: keep-alive\r\nContent-Type: text/html;charset=UTF-8\r\nTransfer-Encoding: chunked\r\n\r\n";
+                                std::cout << "tyui1"<< tmpHeader <<std::endl;
+                                write(curr_event->ident, tmpHeader.c_str(), tmpHeader.size());
+                                currSever.getClientMap()[curr_event->ident].vecIdx++;
+                                currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_READY);
+                                
                             }
-                            else if (n >= 0)
+                            else if (currSever.getClientMap()[curr_event->ident].vecIdx < serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec.size())
                             {
-                                serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].vecIdx++;
+                                std::cout <<"chunk response process: "<< currSever.getClientMap()[curr_event->ident].vecIdx << " / " << serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec.size() << std::endl;
+                                // fcntl(curr_event->ident, F_SETFL, O_NONBLOCK);//넌 이제부터 논블로킹이야
+                                std::cout << "ident"<<curr_event->ident<< "size:"<< serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[currSever.getClientMap()[curr_event->ident].vecIdx].size()<<std::endl;
+                                std::cout << "data"<<curr_event->data<< "udata:"<< curr_event->udata<<std::endl;
+                                
+                                int n ;
+                                std::cout<<serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[currSever.getClientMap()[curr_event->ident].vecIdx].size() << "tyui3 "<<serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[currSever.getClientMap()[curr_event->ident].vecIdx]<<std::endl;
+                                if ((n =write(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[currSever.getClientMap()[curr_event->ident].vecIdx].c_str(), serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().chunkedVec[currSever.getClientMap()[curr_event->ident].vecIdx].size())) == -1)
+                                {
+                                    std::cout << " 더빠른 고장나땅" <<std::endl;
+                                    disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
+                                    std::cout << "고장나땅!" <<std::endl;
+                                    // exit(1);
+                                    break;
+                                }
+                                    
+                                currSever.getClientMap()[curr_event->ident].vecIdx++;
+                                currSever.getClientMap()[curr_event->ident].setServerStatus(SERVER_READY);
+                                
+                                // curr_event->data -=n;
+                            }
+                            else
+                            {
+                                std::cout << "다보내땅!" <<std::endl;
+                                currSever.getClientMap()[curr_event->ident].resetServerValues();
+                                currSever.getClientMap()[curr_event->ident].vecIdx = -1;
                             }
                         }
                         else
                         {
-                        std::cout << "writecnt"<< serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].writeCnt<<std::endl;
-                        n = write(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBody().substr(serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].writeCnt).c_str() , serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBody().substr(serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].writeCnt).size()) ;
-                        std::cout << "n"<< n<<std::endl;
-                        if ( n == -1)
-                        {
-                            printErr("client write err");
-                            // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
+                            // 리드에러없애보고해볼까? data써서
+                            std::string ResponseMessage = serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().writeResponseMessage();
+                            if (write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size()) == -1)
+                            {
+                                printErr("client write err");
+                                disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
+                            }
+                            else
+                            {
+                                currSever.getClientMap()[curr_event->ident].resetServerValues();//왠지 여기클라이언트 삭제 할지말지고민해바야할덧 0612 -> 안해도되지않을까 왜냐면 리셋만하니까... 근데 현스키 케큐는 바디로 판단하기때문에 클라이언트 조건을 바꿀 필요가있음... 지금은 클라이언트 서버 맵으로 보는데 사실은 서버에 클라이언트가 있는지 find해야할 덧? 그게아니면 여기서 잘 지우는게 필요한데 지우면 안될것같은디 음... 1번 서버클라이언트만 지워보기 2번 조건을 바꿔보기
+                            }
                         }
-                        else if (n >= 0)
-                        {
-                            serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].writeCnt+=n;
-                        }
-                        if (serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].writeCnt == serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident].getResponseClass().getBody().size())
-                            currSever.getClientMap()[curr_event->ident].resetServerValues();//왠지 여기클라이언트 삭제 할지말지고민해바야할덧 0612 -> 안해도되지않을까 왜냐면 리셋만하니까... 근데 현스키 케큐는 바디로 판단하기때문에 클라이언트 조건을 바꿀 필요가있음... 지금은 클라이언트 서버 맵으로 보는데 사실은 서버에 클라이언트가 있는지 find해야할 덧? 그게아니면 여기서 잘 지우는게 필요한데 지우면 안될것같은디 음... 1번 서버클라이언트만 지워보기 2번 조건을 바꿔보기
+                        
+                        //지우기 Server : curr들 초기화 initServerCurrResponseAndRequestAndLocation
                         }
                     }
                     else if (currSever.getClientMap()[curr_event->ident].getStatus()== DONE)
