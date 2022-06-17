@@ -382,7 +382,7 @@ void WebServer::monitorKqueue()
                     if (currClient.getResponseClass().getStatusCode() != 0 )
                     {
                         int n = 0;
-                        if (currClient.vecIdx == -1)
+                        if (currClient.vecIdx == -1)//vecIdx 이름 바꿔 헤더인지아닌지 판단하려고 있던거 일단 쓴거임
                         {
                             std::string ResponseMessage = currClient.getResponseClass().writeResponseMessage();
                             n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size());
