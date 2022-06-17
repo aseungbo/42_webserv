@@ -185,7 +185,7 @@ class Client
 		
 		std::string autoIndexBody();
 		void addClient(int clientSocket);
-		std::map< int, Client> getClientMap();
+		std::map< int, Client> &getClientMap();
 		
 };
 

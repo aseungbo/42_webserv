@@ -383,21 +383,9 @@ bool Client::checkClientMaxSize(int locatoinClientMaxSize , int currRequestSize)
 
 void Client::processMethod(std::vector <struct kevent> &change_list)
 {
-	//allow method확인할것 // -> 메소드 함수 안에서 로케이션 정보 있이 하거나, 여기서 로케이션 결정후 확인하거나
-	//isAllowMethod();
-	//405ls
-	// this->currResponse.setBody("");
-	// this->currResponse.setStatusCode(0);
-	// // this->currResponse.setHeader(0);
-	// std::string path = this->currRequest.getStartLine().path;
-	// this->currLocation = whereIsLocation(path);
-	// aliasRoot(currLocation, path);
-	// checkPath(path);
-	//인자로 넘겨주기 >< 경로는 바꾸는거 그대로
-	std::cout << "pro :: " << currLocation.getLocationType() << std::endl;
+	std::cout << "process call lcation type :: " << currLocation.getLocationType() << std::endl;
 	if (currLocation.getLocationType() == LOCATIONTYPE_CGI && getRequestClass().getBody().empty())
 	{
-		std::cout << "cgi body 000000000" <<std::endl;
 		currLocation.setLocationType(LOCATIONTYPE_CGI_DONE);
 		preProcess(LOCATIONTYPE_CGI_DONE);
 	}
@@ -408,7 +396,6 @@ void Client::processMethod(std::vector <struct kevent> &change_list)
 			return (setErrorResponse(405));
 		if (!checkClientMaxSize( currLocation.getClientBodySize(),currRequest.getBody().size()) )
 		{
-			std::cout << "413error" <<currLocation.getClientBodySize()<< ", "<<currRequest.getBody().size()<<std::endl;
 			return (setErrorResponse(413));
 		}
 		switch (currRequest.getStartLine().method)
@@ -458,8 +445,6 @@ void Client::processMethod(std::vector <struct kevent> &change_list)
 		std::cout << "cod::: " << currLocation.getReturnCode() << std::endl; 
 		currResponse.setStatusCode(currLocation.getReturnCode());
 		// TODO: 리다이렉션 정보 
-		// currResponse.setStatusCode(currLocation.getReturnCode())
-		// redir
 	}
 }
 
@@ -692,9 +677,6 @@ void Client::readFile(int fd)
         content += buf;
         memset(buf, 0, 1024);
     }
-    // std::cout << "[ only for test read content ]" << std::endl;
-    // std::cout << content << std::endl;
-    // std::cout << "[ only for test read content ]" << std::endl;
     this->currResponse.setStatusCode(200);
     this->currResponse.setBody(content);
     (*fdManager).erase(fd);
@@ -796,9 +778,6 @@ void Client::getMethod(int isHead)
 {
 	
 	std::string path = this->currRequest.getStartLine().path;
-	// Location currLocation = whereIsLocation(path);
-	// aliasRoot(currLocation, path);
-	// 	// return (setErrorResponse(403));
 	std::cout << "resul ::" << path << std::endl;
 	int pathType = checkPath(path);
 	switch (pathType)
