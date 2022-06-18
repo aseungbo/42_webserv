@@ -6,7 +6,7 @@ int checkPath(std::string &path);
 Client::Client(int _clientSocket)
 {
 
-	std::cout << "struct call"<< std::endl;
+	// std::cout << "struct call"<< std::endl;
 	clientSocket = _clientSocket;
 	
 	clientBody = "";
@@ -65,14 +65,14 @@ int Client::getServerFd()
 
 void Client::setFdManager(int fd, int _clientFd)
 {
-std::cout <<"setFdManager" << fd<<", "<<_clientFd<<std::endl;
+// std::cout <<"setFdManager" << fd<<", "<<_clientFd<<std::endl;
 	if (fdManager->find(fd) != fdManager->end()) 
 	{
-		std::cout << "매니저에 등록되면 안됨"<<std::endl;
+		// std::cout << "매니저에 등록되면 안됨"<<std::endl;
 		exit(1);
 	}
 	(*fdManager).insert(std::pair<int, int>(fd,_clientFd));
-	std::cout <<"등록결과 클라이언트:"<< (*fdManager)[fd]<<std::endl;
+	// std::cout <<"등록결과 클라이언트:"<< (*fdManager)[fd]<<std::endl;
 }
 
 std::string &Client::getChunkedStr()
@@ -174,7 +174,7 @@ std::string Client::autoIndexBody()
 	DIR *dir = opendir(currRequest.getStartLine().path.c_str());
     struct dirent *dp;
 
-	std::cout << "[ Curr path ]" << currRequest.getStartLine().path << std::endl;
+	// std::cout << "[ Curr path ]" << currRequest.getStartLine().path << std::endl;
     body += "<h1>Index of /</h1><hr><pre>";
     for (dp = readdir(dir); dp; dp = readdir(dir))
     {
@@ -303,18 +303,18 @@ void Client::preProcess(int type)
 	// this->currResponse.setStatusCode(0);
 	// this->currResponse.setHeader(0);
 	std::string pathTmp = currRequest.getStartLine().path;
-	std::cout << "ori pathTmp: "<< pathTmp << std::endl;
-	std::cout << "pte process location type: "<< type << std::endl;
+	// std::cout << "ori pathTmp: "<< pathTmp << std::endl;
+	// std::cout << "pte process location type: "<< type << std::endl;
 	if (type != LOCATIONTYPE_CGI_DONE)
 		if (cgiLocation(pathTmp))
 		{
-			std::cout << "cgi find good" <<std::endl;
+			// std::cout << "cgi find good" <<std::endl;
 			return ;
 		}
 	currLocation = whereIsLocation(pathTmp);
 	aliasRoot(currLocation, pathTmp);
 	checkPath(pathTmp);
-	std::cout << "ori pathTmp after: "<< pathTmp << std::endl;
+	// std::cout << "ori pathTmp after: "<< pathTmp << std::endl;
 	currRequest.setPath(pathTmp);
 	// std::cout << "pathTmp: "<< pathTmp << std::endl;
 	// std::cout << "path2: "<< currRequest.getStartLine().path << std::endl;
@@ -383,7 +383,7 @@ bool Client::checkClientMaxSize(int locatoinClientMaxSize , int currRequestSize)
 
 void Client::processMethod(std::vector <struct kevent> &change_list)
 {
-	std::cout << "process call lcation type :: " << currLocation.getLocationType() << std::endl;
+	// std::cout << "process call lcation type :: " << currLocation.getLocationType() << std::endl;
 	if (currLocation.getLocationType() == LOCATIONTYPE_CGI && getRequestClass().getBody().empty())
 	{
 		currLocation.setLocationType(LOCATIONTYPE_CGI_DONE);
@@ -391,7 +391,7 @@ void Client::processMethod(std::vector <struct kevent> &change_list)
 	}
 	if (currLocation.getLocationType() == LOCATIONTYPE_NORMAL || currLocation.getLocationType() == LOCATIONTYPE_CGI_DONE)
 	{
-		std::cout << "nomal !"<<std::endl;
+		// std::cout << "nomal !"<<std::endl;
 		if (!checkAllowMethod(currLocation.getAllowMethod(), currRequest.getStartLine().method))
 			return (setErrorResponse(405));
 		if (!checkClientMaxSize( currLocation.getClientBodySize(),currRequest.getBody().size()) )
@@ -426,7 +426,7 @@ void Client::processMethod(std::vector <struct kevent> &change_list)
 		setReadFd();
 		setWriteFd();
 		
-		std::cout << "cGI !\n";
+		// std::cout << "cGI !\n";
 		setFdManager(writeFd[1], getClientSocket());
 		setFdManager(readFd[0], getClientSocket());
 		
@@ -435,14 +435,14 @@ void Client::processMethod(std::vector <struct kevent> &change_list)
 		fcntl(readFd[1], F_SETFL, O_NONBLOCK);
 		fcntl(readFd[0], F_SETFL, O_NONBLOCK);
 		change_events(change_list, writeFd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-		std::cout << "write[fd]: " << writeFd[1] << std::endl;
-		std::cout << "cgi에서 size: " << getRequestClass().getBody().size() << std::endl;
+		// std::cout << "write[fd]: " << writeFd[1] << std::endl;
+		// std::cout << "cgi에서 size: " << getRequestClass().getBody().size() << std::endl;
 		// currLocation.setLocationType(LOCATIONTYPE_CGI_DONE);
 		return ;
 	}
 	else if (currLocation.getLocationType() ==  LOCATIONTYPE_REDIR)
 	{
-		std::cout << "cod::: " << currLocation.getReturnCode() << std::endl; 
+		// std::cout << "cod::: " << currLocation.getReturnCode() << std::endl; 
 		currResponse.setStatusCode(currLocation.getReturnCode());
 		// TODO: 리다이렉션 정보 
 	}
@@ -494,15 +494,15 @@ Location Client::whereIsLocation(std::string const & path)
 {
 	std::vector < Location > locationVector = this->getLocations();
 	Location tmpLocation;
-	std::cout << "whereis call!"<< std::endl;
+	// std::cout << "whereis call!"<< std::endl;
 	for (int idx = 0 ; idx < locationVector.size(); idx++)
 	{
-		std::cout << "whereis idx!"<< idx << std::endl;
+		// std::cout << "whereis idx!"<< idx << std::endl;
 		std::string findPath = locationVector[idx].getPath();
 		if (findPath.size() > 1 && findPath[findPath.size()-1] == '/')
 		{
 			findPath.erase(findPath.size() - 1);
-			std::cout << "findpath erase : " << findPath << std::endl;
+			// std::cout << "findpath erase : " << findPath << std::endl;
 		}
 		
 		if (path.find(findPath) == 0)
@@ -586,17 +586,17 @@ int Client::serchIndex(std::string &path, Location _currLocation)
 {
 	struct stat buf;
 	
-	std::cout << "serchIndex" <<std::endl;
+	// std::cout << "serchIndex" <<std::endl;
 	//설정 인덱스가 없으면 디폴트 인덱스(현재는 index.html파일) 추가 후 종료
 	if (path[path.size() - 1] != '/')
 	{
-		std::cout << "400000000000003"<<std::endl;
+		// std::cout << "400000000000003"<<std::endl;
 		setErrorResponse(403);
 		return (ADD_INDEX_FAIL);
 	}
 	if (_currLocation.getIndex().size() == 0)
 	{
-		std::cout << "index 0 \n" ;
+		// std::cout << "index 0 \n" ;
 		path += DEFAULT_INDEX;
 		return ADDED_INDEX;
 	}
@@ -605,11 +605,11 @@ int Client::serchIndex(std::string &path, Location _currLocation)
 	for (int idx = 0; idx < currIndex.size(); idx++)
 	{
 		std::string tryIndexPath = path + currIndex[idx];
-		std::cout << tryIndexPath <<std::endl;
+		// std::cout << tryIndexPath <<std::endl;
 		if (stat((tryIndexPath).c_str(), &buf) == 0)
 		{
 			path = tryIndexPath;
-			std::cout <<"fin"<< path<<std::endl;
+			// std::cout <<"fin"<< path<<std::endl;
 			return ADDED_INDEX;
 		}
 	}
@@ -667,7 +667,7 @@ std::vector<std::string > makeChunkedVec(std::string originStr)
 
 void Client::readFile(int fd)
 {
-	std::cout << "readFile call" << fd<<std::endl;
+	// std::cout << "readFile call" << fd<<std::endl;
     std::string content = "";
     int n;
     char buf[1024];
@@ -680,10 +680,10 @@ void Client::readFile(int fd)
     this->currResponse.setStatusCode(200);
     this->currResponse.setBody(content);
     (*fdManager).erase(fd);
-    std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
+    // std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
     close(fd);
-    std::cout << currResponse.getStatusCode() << std::endl;
-    std::cout << "readFile done" << std::endl;
+    // std::cout << currResponse.getStatusCode() << std::endl;
+    // std::cout << "readFile done" << std::endl;
     
 }
 
@@ -691,8 +691,8 @@ void Client::readFile(int fd)
 
 void Client::writeFile(int fd)
 {
-	std::cout << " wrtie File " << std::endl;
-	std::cout << currRequest.getBody().size() << std::endl;
+	// std::cout << " wrtie File " << std::endl;
+	// std::cout << currRequest.getBody().size() << std::endl;
 	// if (currRequest.getBody().size() > 65000)
 	// {
 	// 	std::cout << " very big!" << std::endl;//??????
@@ -715,10 +715,10 @@ void Client::writeFile(int fd)
 	write(fd, "any way done!", 14);
 	this->currResponse.setStatusCode(201);
 	(*fdManager).erase(fd);
-	std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
+	// std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
 	close(fd);
 	// fdManager->erase(fd);
-	std::cout << " wrtie File Done" << std::endl;
+	// std::cout << " wrtie File Done" << std::endl;
     // this->currResponse.setBody(content);
     
 }
@@ -731,7 +731,7 @@ void Client::openFile(std::string path, int isHead)
 	{
 		if (isHead == NO_HEAD)
 		{
-			std::cout << "오픈파일" <<fd<<"+"<<getClientSocket()<<std::endl;
+			// std::cout << "오픈파일" <<fd<<"+"<<getClientSocket()<<std::endl;
 			setFdManager(fd, getClientSocket());
 			change_events(*changeList, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0,0,NULL);
 		}
@@ -769,7 +769,7 @@ void aliasRoot(Location currLocation, std::string &path)
 	if (path[path.size() - 1 ] != '/')
 		path = path + "/";
 	std::string originPath = path; // [curr Rot]: ./[lo path]: /post_body[ori path]:/post_body/ ./post_body
-	std::cout << "[curr Rot]: "  << currRoot << "[lo path]: "<< locationPath << "[ori path]:" <<  originPath << std::endl;
+	// std::cout << "[curr Rot]: "  << currRoot << "[lo path]: "<< locationPath << "[ori path]:" <<  originPath << std::endl;
 	path = currRoot + originPath.substr(locationPath.size(), originPath.size() - locationPath.size() ); 
 	
 }
@@ -778,14 +778,14 @@ void Client::getMethod(int isHead)
 {
 	
 	std::string path = this->currRequest.getStartLine().path;
-	std::cout << "resul ::" << path << std::endl;
+	// std::cout << "resul ::" << path << std::endl;
 	int pathType = checkPath(path);
 	switch (pathType)
 	{
 		case _DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
 			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
 			{
-				std::cout << "auto : " << currLocation.getAutoIndex() << std::endl;
+				// std::cout << "auto : " << currLocation.getAutoIndex() << std::endl;
 				if (currLocation.getAutoIndex() == true)
 				{
 					currResponse.setBody(autoIndexBody());
@@ -840,21 +840,21 @@ void Client::postMethod()
 		currResponse.setStatusCode(0);
 
 	int fd;
-	std::cout << "post result:" << path << std::endl;
+	// std::cout << "post result:" << path << std::endl;
 	if (pathType == _FILE || pathType == _DIR)
 	{
-		std::cout << "file " << std::endl;
+		// std::cout << "file " << std::endl;
 		if ((fd = open(path.c_str(), O_WRONLY | O_APPEND | O_NONBLOCK, 0644)) == -1)
 			return (setErrorResponse(500));
 	}
 	else if (pathType == NOT)
 	{
-		std::cout << "not " << std::endl;
+		// std::cout << "not " << std::endl;
 		int findIdx = path.find_last_of("/");// ./posytsas
 		if (findIdx != 1)
 		{
 			std::string dirPath = path.substr(0, path.find_last_of("/"));
-			std::cout << dirPath << std::endl;
+			// std::cout << dirPath << std::endl;
 			mkdir(dirPath.c_str(),0777);
 		}
 		if ((fd = open(path.c_str(), O_WRONLY | O_CREAT | O_NONBLOCK, 0644)) == -1)
@@ -862,16 +862,16 @@ void Client::postMethod()
 	}
 	else if (pathType == _DIR)
 	{   
-		std::cout << "dir " << std::endl;
+		// std::cout << "dir " << std::endl;
 		return (setErrorResponse(403));
 	}
 	// currResponse.setStatusCode(201);//이거 안바꿔야함
-	// std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
+	// // std::cout << "bbbbbbeutetful" << currRequest.getBody() << std::endl;
 	// if (currRequest.getHeader().getContent()["Content-Length"][0] == '0')
 	// if (currRequest.getBody().size() != 0)
 	// {
 		fcntl(fd, F_SETFL, O_NONBLOCK);
-		std::cout << "post client fd" <<getClientSocket()<<std::endl;
+		// std::cout << "post client fd" <<getClientSocket()<<std::endl;
 		setFdManager(fd, getClientSocket());
 		change_events(*changeList, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0,0,NULL);
 		// write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
@@ -897,7 +897,7 @@ void Client::deleteMethod()
 
 void Client::resetServerValues()
 {
-	std::cout << "reset caaaaallllll"<<std::endl;
+	// std::cout << "reset caaaaallllll"<<std::endl;
 	getResponseClass().setBody("");
 	getResponseClass().setStatusCode(0);
 	getResponseClass().getHeader().getContent().clear();
@@ -938,7 +938,7 @@ void Client::resetServerValues()
 }
 void Client::parseChunkedBody()
 {
-	std::cout << "파스청크바디" << getRequestClass().getBody().size()<<std::endl;
+	// std::cout << "파스청크바디" << getRequestClass().getBody().size()<<std::endl;
 	int idx = 0;
 	int cunkeSize = 0;
 	std::string orginBody = getRequestClass().getBody();
@@ -954,7 +954,7 @@ void Client::parseChunkedBody()
 		idx = find + 2 + cunkeSize + 1;
 	}
 	getRequestClass().setBody(resultBody);
-	std::cout << "파스청크바디 끝" << getRequestClass().getBody().size()<<std::endl;
+	// std::cout << "파스청크바디 끝" << getRequestClass().getBody().size()<<std::endl;
 }
 // void Client::headMethod()
 // {

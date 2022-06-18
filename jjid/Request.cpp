@@ -8,7 +8,7 @@ std::vector<std::string> Request::splitRequestMessage(std::string str, char deli
     // istringstream은 istream을 상속받으므로 getline을 사용할 수 있다.
     while (std::getline(iss, buffer, delimiter))
     {
-        std::cout << "qwer"<<buffer<<std::endl;
+        // std::cout << "qwer"<<buffer<<std::endl;
 		result.push_back(buffer);               // 절삭된 문자열을 vector에 저장
 	}
 	
@@ -92,8 +92,8 @@ std::pair <std::string, std::string> Request::initRequestHeader(const std::strin
 	temp.first = splitHeader[0];
 	temp.second = splitHeader[1].substr(1,splitHeader[1].size() - 2);//TODO:공백날리기 다시생각 하기~ 스페이스 여러개 또는 없이 왔을때
 	
-	std::cout << temp.first <<  temp.second << std::endl;
-	std::cout << "initRequestHeader : " << "[" << temp.first << " , "<< temp.second << "]" << std::endl;
+	// std::cout << temp.first <<  temp.second << std::endl;
+	// std::cout << "initRequestHeader : " << "[" << temp.first << " , "<< temp.second << "]" << std::endl;
 
 	return (temp);
 }
@@ -115,7 +115,7 @@ void Request::parseRequestMessage(std::string requestMessage)
 	if (requestMessage.size() == 0)
 		return ;
 	clearRequest();
-	std::cout <<"<" << requestMessage << ">"<<std::endl ;
+	// std::cout <<"<" << requestMessage << ">"<<std::endl ;
 	// std::cout << requestMessage << std::endl;
 	// if (headerDone == false)
 	// {
@@ -132,8 +132,8 @@ void Request::parseRequestMessage(std::string requestMessage)
 			header.getContent().insert(initRequestHeader(*iter));
 		if (requestMessage.size() >= requestMessage.find("\r\n\r\n") + 4)
 			body = requestMessage.substr(requestMessage.find("\r\n\r\n") + 4);
-		std::cout << "in parse body:" << body <<std::endl;
-		std::cout << "in parse getbody:" << getBody() <<std::endl;
+		// std::cout << "in parse body:" << body <<std::endl;
+		// std::cout << "in parse getbody:" << getBody() <<std::endl;
 		
 		// for (; iter != parseRequest.end(); iter++)
 		// 	if (iter != parseRequest.end() -1 )
