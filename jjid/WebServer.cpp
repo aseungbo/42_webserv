@@ -308,6 +308,10 @@ void WebServer::monitorKqueue()
                         printErr("accept err");
                         usleep(10); //이부분 제거하고 알맞은 로직 필요할듯 당장 예상하는 방법은 continue;
                     }
+                    // struct linger ling;
+                    // ling.l_onoff = 1;
+                    // ling.l_onoff = 0;
+                    // setsockopt(clientSocket, SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
                     fcntl(clientSocket, F_SETFL, O_NONBLOCK);
                     std::cout << "new accept : "<< clientSocket <<  std::endl;
                     change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -389,6 +393,7 @@ void WebServer::monitorKqueue()
                             if (n == -1)
                             {
                                 printErr("client write err");
+                                shutdown(curr_event->ident, SHUT_WR);
                                 // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
                             }
                             else if (n >= 0)
@@ -404,6 +409,7 @@ void WebServer::monitorKqueue()
                             if ( n == -1)
                             {
                                 printErr("client write err");
+                                shutdown(curr_event->ident, SHUT_WR);
                                 // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
                             }
                             else if (n >= 0)
@@ -411,7 +417,10 @@ void WebServer::monitorKqueue()
                                 currClient.writeCnt+=n;
                             }
                             if (currClient.writeCnt == currClient.getResponseClass().getBody().size())
+                            {
                                 currClient.resetServerValues();
+                                shutdown(curr_event->ident, SHUT_WR);
+                            }
                         }
                     }
                     else if (currClient.getStatus()== DONE)

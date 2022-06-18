@@ -665,29 +665,60 @@ std::vector<std::string > makeChunkedVec(std::string originStr)
 }
 
 
+// void Client::readFile(int fd)
+// {
+// 	std::cout << "readFile call" << fd<<std::endl;
+//     std::string content = "";
+//     int n;
+//     char buf[1024];
+//     while ((n = read(fd, buf,1023)) > 0)
+//     {
+//         buf[n] = '\0';
+//         content += buf;
+//         memset(buf, 0, 1024);
+//     }
+//     this->currResponse.setStatusCode(200);
+//     this->currResponse.setBody(content);
+//     (*fdManager).erase(fd);
+//     std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
+//     close(fd);
+//     std::cout << currResponse.getStatusCode() << std::endl;
+//     std::cout << "readFile done" << std::endl;
+    
+// }
+
 void Client::readFile(int fd)
 {
-	std::cout << "readFile call" << fd<<std::endl;
+	// std::cout << "readFile call" << fd<<std::endl;
     std::string content = "";
     int n;
     char buf[1024];
-    while ((n = read(fd, buf,1023)) > 0)
+    if ((n = read(fd, buf,1023)) <= 0)
     {
+		if (n < 0)
+			printErr("readFile Err");
+		else
+		{
+			this->currResponse.setStatusCode(200);
+			this->currResponse.setBody(content);
+			(*fdManager).erase(fd);
+			close(fd);
+		}
+	}
+	else
+	{
         buf[n] = '\0';
         content += buf;
         memset(buf, 0, 1024);
+		if (n <= 1023)
+		{
+			this->currResponse.setStatusCode(200);
+			this->currResponse.setBody(content);
+			(*fdManager).erase(fd);
+			close(fd);
+		}
     }
-    this->currResponse.setStatusCode(200);
-    this->currResponse.setBody(content);
-    (*fdManager).erase(fd);
-    std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
-    close(fd);
-    std::cout << currResponse.getStatusCode() << std::endl;
-    std::cout << "readFile done" << std::endl;
-    
 }
-
-
 
 void Client::writeFile(int fd)
 {
@@ -716,7 +747,7 @@ void Client::writeFile(int fd)
 	this->currResponse.setStatusCode(201);
 	(*fdManager).erase(fd);
 	std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
-	close(fd);
+	// close(fd);
 	// fdManager->erase(fd);
 	std::cout << " wrtie File Done" << std::endl;
     // this->currResponse.setBody(content);
