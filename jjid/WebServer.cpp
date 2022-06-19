@@ -65,6 +65,10 @@ void WebServer::listenServers()
 	{
 		struct sockaddr_in serverAddr;
 		int serverSocketFD = socket(PF_INET, SOCK_STREAM, 0);
+		// int sockopt = 1;
+        // if (setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR, & sockopt, sizeof(sockopt)) == -1) {
+        //     exit(EXIT_FAILURE);
+        // }
 		if (serverSocketFD == -1)	
 			printErr("Socket error");
 		
@@ -188,48 +192,47 @@ void WebServer::monitorKqueue()
                             char buf[1024];
                             if ((n = read(curr_event->ident, buf, 1023)) > 0)
                             {
-                                // std::cout<< "n:" << n <<std::endl;
                                 buf[n] = '\0';
                                 body += buf;
                                 memset(buf, 0, 1024);
                             }
                             currClient.addChunkedStr(body);
-                            // std::cout << "close call" << currClient.getWriteFd()[0] <<", "<<currClient.getReadFd()[1]<<std::endl;
                         }
-                        // std::cout << "!@#$%^ size: " <<currClient.getChunkedStr().size()<<std::endl;
                         if (currClient.getRequestClass().getBody().size() <= currClient.getChunkedStr().size())//추후에 \r\n 이후거만 비교 해서 ==으로 수정
                         {
-                            currClient.getResponseClass().setBody(currClient.getResponseClass().getBody() );
-                            currClient.getRequestClass().setBody(currClient.getChunkedStr().substr(currClient.getChunkedStr().find("\r\n\r\n") + 4));
-                            currClient.getResponseClass().CgiHeader = (currClient.getChunkedStr().substr(0, currClient.getChunkedStr().find("\r\n\r\n")));
-                            currClient.getResponseClass().setBody(currClient.getChunkedStr().substr(currClient.getChunkedStr().find("\r\n\r\n") + 4));
-                            currClient.getResponseClass().chunkedVec = makeChunkedVec(currClient.getChunkedStr().substr(currClient.getChunkedStr().find("\r\n\r\n") + 4));
-                            currClient.getCurrLocation().setLocationType(LOCATIONTYPE_CGI_DONE);
-                            
-                            std::map <std::string, std::string>::iterator findIter = currClient.getRequestClass().getHeader().getContent().find("Content-Length");
-                            currClient.setStatus(DONE);
-                            
-                            if (findIter != currClient.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
-                                findIter->second = std::to_string(currClient.getRequestClass().getBody().size());
-                            currClient.setChunkedStr("");
-                            // std::cout << "close call" << currClient.getWriteFd()[1] <<", "<<currClient.getReadFd()[0]<<std::endl;
-                            
-                            int tmpWriteFd = currClient.getWriteFd()[0];
-                            int tmpReadFd = currClient.getReadFd()[1];
-                            close(tmpWriteFd);
-                            close(tmpReadFd);
-                            tmpWriteFd = currClient.getWriteFd()[1];
-                            tmpReadFd = currClient.getReadFd()[0];
+                            std::string cgiBody = currClient.getChunkedStr().substr(currClient.getChunkedStr().find("\r\n\r\n") + 4);
+                            if (currClient.getRequestClass().getBody().size() == cgiBody.size())
+                            {
+                                currClient.getRequestClass().setBody(cgiBody);
+                                currClient.getResponseClass().CgiHeader = (currClient.getChunkedStr().substr(0, currClient.getChunkedStr().find("\r\n\r\n")));
+                                currClient.getResponseClass().setBody(cgiBody);
+                                std::cout << "set size" <<  currClient.getResponseClass().getBody().size() << std::endl;
+                                currClient.getResponseClass().chunkedVec = makeChunkedVec(cgiBody);
+                                currClient.getCurrLocation().setLocationType(LOCATIONTYPE_CGI_DONE);
+                                
+                                std::map <std::string, std::string>::iterator findIter = currClient.getRequestClass().getHeader().getContent().find("Content-Length");
+                                currClient.setStatus(DONE);
+                                
+                                if (findIter != currClient.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
+                                    findIter->second = std::to_string(currClient.getRequestClass().getBody().size());
+                                currClient.setChunkedStr("");
+                                
+                                int tmpWriteFd = currClient.getWriteFd()[0];
+                                int tmpReadFd = currClient.getReadFd()[1];
+                                close(tmpWriteFd);
+                                close(tmpReadFd);
+                                tmpWriteFd = currClient.getWriteFd()[1];
+                                tmpReadFd = currClient.getReadFd()[0];
 
-                            // std::cout << "erase call" << tmpWriteFd <<", "<<tmpReadFd<<std::endl;
-                            
-                            int tmpPid = currClient.getCgiPid();
-                            fdManager.erase(tmpWriteFd);
-                            fdManager.erase(tmpReadFd);
-                            close(tmpWriteFd);
-                            close(tmpReadFd);
-                            // std::cout << "erase result" << (int)(fdManager.find(tmpWriteFd) != fdManager.end()) <<", "<<(int)(fdManager.find(tmpReadFd) != fdManager.end())<<std::endl;
-                            waitpid(tmpPid, NULL, WNOHANG);
+                                
+                                int tmpPid = currClient.getCgiPid();
+                                fdManager.erase(tmpWriteFd);
+                                fdManager.erase(tmpReadFd);
+                                close(tmpWriteFd);
+                                close(tmpReadFd);
+                                // std::cout << "erase result" << (int)(fdManager.find(tmpWriteFd) != fdManager.end()) <<", "<<(int)(fdManager.find(tmpReadFd) != fdManager.end())<<std::endl;
+                                waitpid(tmpPid, NULL, WNOHANG);
+                            }
                         }
                     }
                 }
@@ -309,6 +312,10 @@ void WebServer::monitorKqueue()
                         usleep(10); //이부분 제거하고 알맞은 로직 필요할듯 당장 예상하는 방법은 continue;
                     }
                     fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+                    struct linger solinger = { 1, 0 }; 
+                    if (setsockopt(clientSocket, SOL_SOCKET, SO_LINGER, &solinger, sizeof(struct linger)) == -1) {
+                        perror("setsockopt(SO_LINGER)"); 
+                    }
                     // std::cout << "new accept : "<< clientSocket <<  std::endl;
                     change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clientsServerMap[clientSocket] = serverSocket;
@@ -411,7 +418,12 @@ void WebServer::monitorKqueue()
                                 currClient.writeCnt+=n;
                             }
                             if (currClient.writeCnt == currClient.getResponseClass().getBody().size())
+                            {
+                                static int cnt = 0;
+                                std::cout << "write size" <<  currClient.writeCnt << std::endl;
+                                std::cout << cnt++ << std::endl;
                                 currClient.resetServerValues();
+                            }
                         }
                     }
                     else if (currClient.getStatus()== DONE)

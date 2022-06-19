@@ -29,6 +29,7 @@ Client::Client(int _clientSocket)
 	vecIdx = -1;
 	writeCnt = 0;
 	
+	
 }
 
 int &Client::getClientSocket()
@@ -725,7 +726,7 @@ void Client::writeFile(int fd)
 
 void Client::openFile(std::string path, int isHead)
 {		
-	int	fd = open(path.c_str(), O_RDONLY);
+	int	fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
 	
 	if (fd != -1)
 	{
