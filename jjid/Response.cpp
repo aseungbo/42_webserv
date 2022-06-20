@@ -72,6 +72,7 @@ std::string	Response::statusMessage(size_t statusCode)
 
 std::string inHeadMethodNameIsHederMapToString(std::map <std::string, std::string > content)
 {
+	(void)content;
 	// std::string retString;
 	
 	// for (std::map <std::string, std::string >::iterator iter = content.begin();  iter != content.end(); iter++)
@@ -110,6 +111,7 @@ std::string Response::writeResponseMessage()
 
 std::string Response::searchStatusCodeMessage(int statusCode)
 {
+	(void)statusCode;
 	std::string returnStatusCodeMessage;
 	
 	returnStatusCodeMessage = " OK\n\n";

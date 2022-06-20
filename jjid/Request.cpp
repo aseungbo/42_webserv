@@ -84,7 +84,7 @@ std::pair <std::string, std::string> Request::initRequestHeader(const std::strin
 	}
 	if (splitHeader.size() > 2)
 	{
-		for (int i = 2; i < splitHeader.size(); i++)
+		for (unsigned long i = 2; i < splitHeader.size(); i++)
 			splitHeader[1] += (":" + splitHeader[i]);
 	}
 	
