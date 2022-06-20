@@ -186,7 +186,6 @@ void WebServer::monitorKqueue()
                     {
                         if (currClient.getCgiPid() > 0)
                         {
-                            // std::cout << "[parent]" << std::endl;
                             std::string body;
                             int n;
                             char buf[1024];
@@ -312,10 +311,10 @@ void WebServer::monitorKqueue()
                         usleep(10); //이부분 제거하고 알맞은 로직 필요할듯 당장 예상하는 방법은 continue;
                     }
                     fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-                    struct linger solinger = { 1, 0 }; 
-                    if (setsockopt(clientSocket, SOL_SOCKET, SO_LINGER, &solinger, sizeof(struct linger)) == -1) {
-                        perror("setsockopt(SO_LINGER)"); 
-                    }
+                    // struct linger solinger = { 1, 0 }; 
+                    // if (setsockopt(clientSocket, SOL_SOCKET, SO_LINGER, &solinger, sizeof(struct linger)) == -1) {
+                    //     perror("setsockopt(SO_LINGER)"); 
+                    // }
                     // std::cout << "new accept : "<< clientSocket <<  std::endl;
                     change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     clientsServerMap[clientSocket] = serverSocket;
@@ -332,7 +331,8 @@ void WebServer::monitorKqueue()
                         std::string &currStr = currClient.getRequestClass().getBody();
                         // std::cout << "size:::" << currClient.getRequestClass().getBody().size()<<std::endl;
                         int n;
-                        if (( n = write(curr_event->ident ,currStr.c_str(), 1023)) > 0)
+                        int size =  currStr.size() >= 1023 ? 1023 : currStr.size(); // Body size가 1023보다 작다면 Body size만큼만 write
+                        if (( n = write(curr_event->ident ,currStr.c_str(), size)) > 0)
                         {
                             currClient.addChunkedWriteSize(n);
                             
@@ -342,8 +342,6 @@ void WebServer::monitorKqueue()
                                 currClient.forkCgiPid();
                             if (currClient.getCgiPid() == 0)
                             {
-                                std::string body;
-                                char buf[1024];
                                 int tmpWriteFd = currClient.getWriteFd()[1];
                                 int tmpReadFd = currClient.getReadFd()[0];
                                 
@@ -357,7 +355,8 @@ void WebServer::monitorKqueue()
                                 test[1] = NULL;
                                 if((execve(currClient.getCurrLocation().getCgiPath().c_str(),test, currClient.makeEnvp(currClient.getRequestClass().getBody().size()))) == -1 )
                                 {
-                                    write(currClient.getReadFd()[1], "errororor\n", 11);
+                                    printErr("execve err");
+                                    // write(currClient.getReadFd()[1], "errororor\n", 11);
                                     exit(1);
                                 }
                                 exit(1);
@@ -374,6 +373,8 @@ void WebServer::monitorKqueue()
                         }
                         else
                         {
+                            if (n == -1)
+                                printErr("parent to child write err");
                             // std::cout <<"cgi write end else"<<std::endl;
                             change_events(change_list, currClient.getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             // std::cout << "read[fd]: " << currClient.getReadFd()[0] << std::endl;
@@ -411,7 +412,6 @@ void WebServer::monitorKqueue()
                             if ( n == -1)
                             {
                                 printErr("client write err");
-                                // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);
                             }
                             else if (n >= 0)
                             {
@@ -419,10 +419,8 @@ void WebServer::monitorKqueue()
                             }
                             if (currClient.writeCnt == currClient.getResponseClass().getBody().size())
                             {
-                                static int cnt = 0;
-                                std::cout << "write size" <<  currClient.writeCnt << std::endl;
-                                std::cout << cnt++ << std::endl;
                                 currClient.resetServerValues();
+                                disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap); // lsof -p pid 찍어보면 server에는 문제가 없음.
                             }
                         }
                     }

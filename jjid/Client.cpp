@@ -196,7 +196,6 @@ std::string Client::autoIndexBody()
 
 char  **Client::makeEnvp(int length)
 {
-
 	char **result = new char*[7];
 	std::string str;
 
@@ -260,7 +259,6 @@ char  **Client::makeEnvp(int length)
 	else
 		result[5] = NULL;
 		result[6] = NULL;
-	
 	return (result);
 }
 
@@ -693,7 +691,6 @@ void Client::readFile(int fd)
 void Client::writeFile(int fd)
 {
 	// std::cout << " wrtie File " << std::endl;
-	// std::cout << currRequest.getBody().size() << std::endl;
 	// if (currRequest.getBody().size() > 65000)
 	// {
 	// 	std::cout << " very big!" << std::endl;//??????
@@ -712,8 +709,10 @@ void Client::writeFile(int fd)
 	// 	}
 	// }
 	// else
-	// 	write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
-	write(fd, "any way done!", 14);
+		// write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
+	int n = write(fd, currRequest.getBody().c_str(), currRequest.getBody().size()); // CGI Parent process에서 request body도 바꾸기때문에 문제 없음.
+	if (n == -1)
+		printErr("write file err");
 	this->currResponse.setStatusCode(201);
 	(*fdManager).erase(fd);
 	// std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
