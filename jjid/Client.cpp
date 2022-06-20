@@ -271,7 +271,7 @@ bool Client::cgiLocation(std::string const &path)
 {
 	std::vector < Location > locationVector = this->getLocations();
 	Location tmpLocation;
-	for (int idx = 0 ; idx < locationVector.size(); idx++)
+	for (int idx = 0 ; idx < static_cast<int>(locationVector.size()); idx++)
 	{	
 		if (!locationVector[idx].getExtension().empty())// TODO 앞에 path 까지 확인하는거 추가 필요
 		{
@@ -354,7 +354,7 @@ void Client::addChunkedWriteSize(int size)
 bool Client::checkAllowMethod(std::vector<std::string> strVec, int method)
 {
 	
-	for (int idx = 0 ; idx < strVec.size(); idx++)
+	for (int idx = 0 ; idx < static_cast<int>(strVec.size()); idx++)
 	{
 		if (getRequestClass().methodToNum(strVec[idx]) == method || method == -1)
 			return true;
@@ -494,7 +494,7 @@ Location Client::whereIsLocation(std::string const & path)
 	std::vector < Location > locationVector = this->getLocations();
 	Location tmpLocation;
 	// std::cout << "whereis call!"<< std::endl;
-	for (int idx = 0 ; idx < locationVector.size(); idx++)
+	for (int idx = 0 ; idx < static_cast<int>(locationVector.size()); idx++)
 	{
 		// std::cout << "whereis idx!"<< idx << std::endl;
 		std::string findPath = locationVector[idx].getPath();
@@ -601,7 +601,7 @@ int Client::serchIndex(std::string &path, Location _currLocation)
 	}
 	//설정 인덱스가 있다면 가장 처음 있는 파일 경로 넣고 종료
 	std::vector<std::string> currIndex = _currLocation.getIndex();
-	for (int idx = 0; idx < currIndex.size(); idx++)
+	for (int idx = 0; idx < static_cast<int>(currIndex.size()); idx++)
 	{
 		std::string tryIndexPath = path + currIndex[idx];
 		// std::cout << tryIndexPath <<std::endl;
@@ -643,11 +643,11 @@ std::string intToHexStr(int decimal)
 std::vector<std::string > makeChunkedVec(std::string originStr)
 {
 	int idx = 0;
-	int currSzie = 0;
+	// int currSzie = 0;
 	
 	std::vector<std::string > returnVec;
 
-	while (idx < originStr.size())
+	while (idx < static_cast<int>(originStr.size()))
 	{
 		std::string currString = originStr.substr(idx,1024);
 		idx += currString.size();
@@ -656,7 +656,7 @@ std::vector<std::string > makeChunkedVec(std::string originStr)
 		
 		currString = intToHexStr(currString.size())+ "\r\n" + currString + "\r\n";
 		returnVec.push_back(currString);
-		if (idx > originStr.size())
+		if (idx > static_cast<int>(originStr.size()))
 			break ;
 	}
 	returnVec.push_back("0\r\n\r\n");
@@ -750,6 +750,7 @@ void Client::openFile(std::string path, int isHead)
 
 std::string whereIsRoot(std::string path, Location currLocation)
 {
+	(void)path;
 	// std::string retPath;
 	
 	// path = 
@@ -839,7 +840,7 @@ void Client::postMethod()
 	if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
 		currResponse.setStatusCode(0);
 
-	int fd;
+	int fd = 0;
 	// std::cout << "post result:" << path << std::endl;
 	if (pathType == _FILE || pathType == _DIR)
 	{
@@ -943,7 +944,7 @@ void Client::parseChunkedBody()
 	int cunkeSize = 0;
 	std::string orginBody = getRequestClass().getBody();
 	std::string resultBody;
-	while (idx < orginBody.size())
+	while (idx < static_cast<int>(orginBody.size()))
 	{
 		int find = orginBody.find("\r\n", idx);
 		cunkeSize = std::strtol(orginBody.substr(idx, find - idx).c_str(), NULL, 16);

@@ -129,7 +129,7 @@ void    Parser::parseLocPath(std::string currLine)
 
     int start;
     int end;
-    int extensionPos = temp.find("*.");
+    const unsigned long extensionPos = temp.find("*.");
     if (extensionPos != std::string::npos)
     {
         start = temp.find("/");
@@ -165,7 +165,7 @@ void Parser::parseAllowMethod(std::string currLine)
     lineSplit.erase(lineSplit.begin());
 
     std::vector<std::string> allowVec;
-    for (int i = 0; i < lineSplit.size(); i++)
+    for (unsigned long i = 0; i < lineSplit.size(); i++)
     {
         if (lineSplit[i].find("{") != std::string::npos)
             break;
@@ -234,11 +234,13 @@ std::map<std::vector<int>, std::string> Parser::initErrPage()
     else if (locFlag == 1)
     {
         if (locMap.find("error_page") != locMap.end())
+        {
             size = locMap.find("error_page")->second.size();
             std::string path = locMap.find("error_page")->second[size - 1];
             for (int i = 0; i < size - 1; i++)
                 statusCodes.push_back(atoi((locMap.find("error_page")->second[i].c_str())));
             temp.insert(std::pair<std::vector<int>, std::string>(statusCodes, path));
+        }
     }
     return (temp);
 }

@@ -61,14 +61,13 @@ void WebServer::parseConfig()
 void WebServer::listenServers()
 {
     std::cout << "\033[47;30m[ Available Port ]\033[0m" << std::endl;;
-	for (int idx = 0; idx < this->servers.size() ; idx++)
+	for (unsigned long idx = 0; idx < this->servers.size() ; idx++)
 	{
 		struct sockaddr_in serverAddr;
 		int serverSocketFD = socket(PF_INET, SOCK_STREAM, 0);
-		// int sockopt = 1;
-        // if (setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR, & sockopt, sizeof(sockopt)) == -1) {
-        //     exit(EXIT_FAILURE);
-        // }
+		int sockopt = 1;
+        if (setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR, & sockopt, sizeof(sockopt)) == -1)
+            printErr("SO_REUSEADDR Set err: server socket");
 		if (serverSocketFD == -1)	
 			printErr("Socket error");
 		
@@ -112,11 +111,9 @@ bool WebServer::checkLastChunked(std::string const &str)
 
 void WebServer::monitorKqueue()
 {
-
-    clock_t start, finish;
-    double duration;
-    
-    start = clock();
+    // clock_t start, finish;
+    // double duration;   
+    // start = clock();
  
 	int kq;
     if ((kq = kqueue()) == -1)
@@ -141,7 +138,7 @@ void WebServer::monitorKqueue()
     struct kevent* curr_event;
     struct timespec kTime;
     
-	int requestCnt = 0;
+	// int requestCnt = 0;
     while (1)
     {
         memset(&kTime, 0x00, sizeof(kTime));
@@ -248,6 +245,7 @@ void WebServer::monitorKqueue()
                             printErr("client read error!");
                         // std::cout << "read:diconnect call" <<std::endl;
                         disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);// 0612역시 여기서 냅다 초기화날려야할지두
+                        usleep(300);
                     }
                     else
                     {
@@ -361,7 +359,7 @@ void WebServer::monitorKqueue()
                                 }
                                 exit(1);
                             }
-                            if (currClient.getChunkedWriteSize() >= currClient.getRequestClass().getBody().size() )
+                            if (currClient.getChunkedWriteSize() >= static_cast<int>(currClient.getRequestClass().getBody().size()) )
                             {
                                 // std::cout <<"cgi write end not else"<<std::endl;
                                 change_events(change_list, currClient.getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -412,15 +410,18 @@ void WebServer::monitorKqueue()
                             if ( n == -1)
                             {
                                 printErr("client write err");
+                                // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap); // lsof -p pid 찍어보면 server에는 문제가 없음.
                             }
                             else if (n >= 0)
                             {
                                 currClient.writeCnt+=n;
                             }
-                            if (currClient.writeCnt == currClient.getResponseClass().getBody().size())
+                            if (currClient.writeCnt == static_cast<int>(currClient.getResponseClass().getBody().size()))
                             {
                                 currClient.resetServerValues();
+                                // close(curr_event->ident);
                                 disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap); // lsof -p pid 찍어보면 server에는 문제가 없음.
+                                usleep(1500);
                             }
                         }
                     }
@@ -430,7 +431,7 @@ void WebServer::monitorKqueue()
                         std::map <std::string, std::string>::iterator findIter = currClient.getRequestClass().getHeader().getContent().find("Content-Length");
                         if (findIter != currClient.getRequestClass().getHeader().getContent().end())//길이헤더 찾았을때
                         {   
-                            if (std::atoi(findIter->second.c_str()) == currClient.getRequestClass().getBody().size())//바디사이즈까지 같을때
+                            if (std::atoi(findIter->second.c_str()) == static_cast<int>(currClient.getRequestClass().getBody().size()))//바디사이즈까지 같을때
                             {
                                 currClient.preProcess(currClient.getCurrLocation().getLocationType());
                                 currClient.processMethod(change_list);

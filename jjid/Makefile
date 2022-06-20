@@ -2,7 +2,7 @@
 NAME := jjid
 
 CC := c++
-# CFLAGS := -Wall -Wextra -Werror
+CFLAGS := -Wall -Wextra -Werror
 CDEBUG = -fsanitize=address -g -std=c++98
 
 SRCS := Location.cpp \
