@@ -42,7 +42,7 @@ WebServer::WebServer(std::string confPath) : confPath(confPath)
 
 void WebServer::parseConfig()
 {
-    Parser parser;
+    Parser parser = Parser();
     
     parser.openConfigfile(this->confPath);
     if (parser.getConfig().empty() == 1)

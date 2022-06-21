@@ -6,14 +6,12 @@ CFLAGS := -Wall -Wextra -Werror
 CDEBUG = -fsanitize=address -g -std=c++98
 
 SRCS := Location.cpp \
-		parseConf.cpp \
+		Parser.cpp \
 		Request.cpp \
 		Response.cpp \
 		Server.cpp \
 		uniHeader.cpp \
 		WebServer.cpp \
-		parseConf.cpp \
-		parseUtil.cpp \
 		Client.cpp
 
 
