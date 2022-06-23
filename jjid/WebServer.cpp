@@ -117,113 +117,127 @@ void WebServer::monitorKqueue()
             usleep(10);
         
         change_list.clear();
-        try
+        for (int i = 0; i < new_events; ++i)
         {
-            for (int i = 0; i < new_events; ++i)
-            {
-                    
                 
-                curr_event = &event_list[i];
-                if (curr_event->flags & EV_ERROR)
+            
+            curr_event = &event_list[i];
+            if (curr_event->flags & EV_ERROR)
+            {
+                std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
+                if (serverIter != serverMap.end())
+                    printErr("server socket error");
+            }
+            else if (curr_event->filter == EVFILT_READ)
+            {
+                if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    std::map<int, Server>::iterator serverIter = serverMap.find(curr_event->ident);
-                    if (serverIter != serverMap.end())
-                        printErr("server socket error");
-                }
-                else if (curr_event->filter == EVFILT_READ)
-                {
-                    if (fdManager.find(curr_event->ident) != fdManager.end())
+                    Client &currClient = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]];
+                    if (currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL || currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE)
                     {
-                        Client &currClient = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]];
-                        if (currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL || currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE)
+                        change_events(change_list, fdManager[curr_event->ident], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                        currClient.readFile(curr_event->ident);
+                    }
+                    else
+                    {
+                        if (currClient.getCgiPid() > 0)
                         {
-                            change_events(change_list, fdManager[curr_event->ident], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                            currClient.readFile(curr_event->ident);
-                        }
-                        else
-                        {
-                            if (currClient.getCgiPid() > 0)
+                            std::string body;
+                            int n;
+                            char buf[1024];
+                            if ((n = read(curr_event->ident, buf, 1023)) > 0)
                             {
-                                std::string body;
-                                int n;
-                                char buf[1024];
-                                if ((n = read(curr_event->ident, buf, 1023)) > 0)
-                                {
-                                    buf[n] = '\0';
-                                    body += buf;
-                                    memset(buf, 0, 1024);
-                                }
-                                currClient.addChunkedStr(body);
+                                buf[n] = '\0';
+                                body += buf;
+                                memset(buf, 0, 1024);
                             }
-                            if (currClient.getRequestClass().getBody().size() <= currClient.getChunkedStr().size())
+                            currClient.addChunkedStr(body);
+                        }
+                        if (currClient.getRequestClass().getBody().size() <= currClient.getChunkedStr().size())
+                        {
+                            std::string cgiBody = currClient.getChunkedStr().substr(currClient.getChunkedStr().find("\r\n\r\n") + 4);
+                            if (currClient.getRequestClass().getBody().size() == cgiBody.size())
                             {
-                                std::string cgiBody = currClient.getChunkedStr().substr(currClient.getChunkedStr().find("\r\n\r\n") + 4);
-                                if (currClient.getRequestClass().getBody().size() == cgiBody.size())
-                                {
-                                    currClient.getRequestClass().setBody(cgiBody);
-                                    currClient.getResponseClass().CgiHeader = (currClient.getChunkedStr().substr(0, currClient.getChunkedStr().find("\r\n\r\n")));
-                                    currClient.getResponseClass().setBody(cgiBody);
-                                    currClient.getResponseClass().chunkedVec = makeChunkedVec(cgiBody);
-                                    currClient.getCurrLocation().setLocationType(LOCATIONTYPE_CGI_DONE);
-                                    
-                                    std::map <std::string, std::string>::iterator findIter = currClient.getRequestClass().getHeader().getContent().find("Content-Length");
-                                    currClient.setStatus(DONE);
-                                    
-                                    if (findIter != currClient.getRequestClass().getHeader().getContent().end())
-                                        findIter->second = std::to_string(currClient.getRequestClass().getBody().size());
-                                    currClient.setChunkedStr("");
-                                    
-                                    int tmpWriteFd = currClient.getWriteFd()[0];
-                                    int tmpReadFd = currClient.getReadFd()[1];
-                                    close(tmpWriteFd);
-                                    close(tmpReadFd);
-                                    tmpWriteFd = currClient.getWriteFd()[1];
-                                    tmpReadFd = currClient.getReadFd()[0];
+                                currClient.getRequestClass().setBody(cgiBody);
+                                currClient.getResponseClass().CgiHeader = (currClient.getChunkedStr().substr(0, currClient.getChunkedStr().find("\r\n\r\n")));
+                                currClient.getResponseClass().setBody(cgiBody);
+                                currClient.getResponseClass().chunkedVec = makeChunkedVec(cgiBody);
+                                currClient.getCurrLocation().setLocationType(LOCATIONTYPE_CGI_DONE);
+                                
+                                std::map <std::string, std::string>::iterator findIter = currClient.getRequestClass().getHeader().getContent().find("Content-Length");
+                                currClient.setStatus(DONE);
+                                
+                                if (findIter != currClient.getRequestClass().getHeader().getContent().end())
+                                    findIter->second = std::to_string(currClient.getRequestClass().getBody().size());
+                                currClient.setChunkedStr("");
+                                
+                                int tmpWriteFd = currClient.getWriteFd()[0];
+                                int tmpReadFd = currClient.getReadFd()[1];
+                                close(tmpWriteFd);
+                                close(tmpReadFd);
+                                tmpWriteFd = currClient.getWriteFd()[1];
+                                tmpReadFd = currClient.getReadFd()[0];
 
-                                    
-                                    int tmpPid = currClient.getCgiPid();
-                                    fdManager.erase(tmpWriteFd);
-                                    fdManager.erase(tmpReadFd);
-                                    close(tmpWriteFd);
-                                    close(tmpReadFd);
-                                    waitpid(tmpPid, NULL, WNOHANG);
-                                }
+                                
+                                int tmpPid = currClient.getCgiPid();
+                                fdManager.erase(tmpWriteFd);
+                                fdManager.erase(tmpReadFd);
+                                close(tmpWriteFd);
+                                close(tmpReadFd);
+                                waitpid(tmpPid, NULL, WNOHANG);
                             }
                         }
                     }
-                    else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() && serverMap.find(clientsServerMap[curr_event->ident]) != serverMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end() )
+                }
+                else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() && serverMap.find(clientsServerMap[curr_event->ident]) != serverMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end() )
+                {
+                    Client &currClient =  serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident];
+                    
+                    char buf[1024];
+                    memset(buf,0,1024);
+                    int n = read(curr_event->ident, buf, sizeof(buf) - 1);
+                    if (n <= 0)
                     {
-                        Client &currClient =  serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident];
-                        
-                        char buf[1024];
-                        memset(buf,0,1024);
-                        int n = read(curr_event->ident, buf, sizeof(buf) - 1);
-                        if (n <= 0)
+                        if (n < 0)
+                            printErr("client read error!");
+                        else if (n == 0)
                         {
-                            if (n < 0)
-                                printErr("client read error!");
-                            else if (n == 0)
-                            {
-                                close(curr_event->ident);
-                                usleep(2500);
-                                clientsServerMap.erase(curr_event->ident);
-                                serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
-                            }
+                            close(curr_event->ident);
+                            usleep(2500);
+                            clientsServerMap.erase(curr_event->ident);
+                            serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
                         }
-                        else
+                    }
+                    else
+                    {
+                        buf[n] = '\0';
+                        currClient.getClientBody() += buf;
+                        if (currClient.getStatus() == DONE)
                         {
-                            buf[n] = '\0';
-                            currClient.getClientBody() += buf;
-                            if (currClient.getStatus() == DONE)
+                            currClient.getRequestClass().addBody(currClient.getClientBody());
+                            currClient.getClientBody().clear();
+                        }
+                        else if (currClient.getStatus() == CHUNKED)
+                        {
+                            currClient.getRequestClass().addBody(currClient.getClientBody());
+                            currClient.getClientBody().clear();
+                            if (checkLastChunked(currClient.getRequestClass().getBody()))
                             {
-                                currClient.getRequestClass().addBody(currClient.getClientBody());
-                                currClient.getClientBody().clear();
+                                currClient.parseChunkedBody();
+                                currClient.setStatus(CHUNKED_FIN);
+                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
-                            else if (currClient.getStatus() == CHUNKED)
+                            else
+                                currClient.setStatus(CHUNKED);
+                        }
+                        else if (currClient.getClientBody().find("\r\n\r\n") != std::string::npos)
+                        {
+                            currClient.getRequestClass().parseRequestMessage(currClient.getClientBody());
+                            std::map <std::string, std::string>::iterator chunkedIter = currClient.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
+                            currClient.getClientBody().clear();
+                            if (chunkedIter != currClient.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
                             {
-                                currClient.getRequestClass().addBody(currClient.getClientBody());
-                                currClient.getClientBody().clear();
-                                if (checkLastChunked(currClient.getRequestClass().getBody()))
+                                if(currClient.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
                                 {
                                     currClient.parseChunkedBody();
                                     currClient.setStatus(CHUNKED_FIN);
@@ -232,170 +246,138 @@ void WebServer::monitorKqueue()
                                 else
                                     currClient.setStatus(CHUNKED);
                             }
-                            else if (currClient.getClientBody().find("\r\n\r\n") != std::string::npos)
-                            {
-                                currClient.getRequestClass().parseRequestMessage(currClient.getClientBody());
-                                std::map <std::string, std::string>::iterator chunkedIter = currClient.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
-                                currClient.getClientBody().clear();
-                                if (chunkedIter != currClient.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
-                                {
-                                    if(currClient.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
-                                    {
-                                        currClient.parseChunkedBody();
-                                        currClient.setStatus(CHUNKED_FIN);
-                                        change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                                    }
-                                    else
-                                        currClient.setStatus(CHUNKED);
-                                }
-                                else
-                                {
-                                    currClient.setStatus(DONE);
-                                    change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                                }
-                            }
-                        }
-                    }
-                    else if (serverMap.find(curr_event->ident) != serverMap.end())
-                    {
-                        int clientSocket = 0;
-                        int serverSocket = serverMap.find(curr_event->ident)->first;
-                        if ((clientSocket = accept(serverSocket, NULL, NULL)) == -1)
-                        {
-                            printErr("accept err");
-                            usleep(10);
-                        }
-                        fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-                        change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                        clientsServerMap[clientSocket] = serverSocket;
-                        serverMap[serverSocket].addClient(clientSocket);
-                    }
-                }
-                else if (curr_event->filter == EVFILT_WRITE)
-                {
-                    if (fdManager.find(curr_event->ident) != fdManager.end())
-                    {
-                        Client &currClient = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]];
-                        if (currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_CGI )
-                        {
-                            std::string &currStr = currClient.getRequestClass().getBody();
-                            int n;
-                            int size =  currStr.size() >= 1023 ? 1023 : currStr.size();
-                            if (( n = write(curr_event->ident ,currStr.c_str(), size)) > 0)
-                            {
-                                currClient.addChunkedWriteSize(n);
-                                if (currClient.getCgiPid() < 0)
-                                    currClient.forkCgiPid();
-                                if (currClient.getCgiPid() == 0)
-                                {
-                                    int tmpWriteFd = currClient.getWriteFd()[1];
-                                    int tmpReadFd = currClient.getReadFd()[0];
-                                    
-                                    dup2(currClient.getReadFd()[1],1);
-                                    close(tmpReadFd);
-                                    dup2(currClient.getWriteFd()[0],0);
-                                    close(tmpWriteFd);
-                                    
-                                    char *test[2] ;
-                                    test[0] = (char *)(currClient.getCurrLocation().getCgiPath().c_str());
-                                    test[1] = NULL;
-                                    if((execve(currClient.getCurrLocation().getCgiPath().c_str(),test, currClient.makeEnvp(currClient.getRequestClass().getBody().size()))) == -1 )
-                                    {
-                                        printErr("execve err");
-                                        exit(1);
-                                    }
-                                    exit(1);
-                                }
-                                if (currClient.getChunkedWriteSize() >= static_cast<int>(currClient.getRequestClass().getBody().size()) )
-                                {
-                                    change_events(change_list, currClient.getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                                    currClient.setChunkedWriteSize(0);
-                                }
-                                else
-                                    change_events(change_list, currClient.getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                            }
                             else
                             {
-                                if (n == -1)
-                                    printErr("parent to child write err");
+                                currClient.setStatus(DONE);
+                                change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            }
+                        }
+                    }
+                }
+                else if (serverMap.find(curr_event->ident) != serverMap.end())
+                {
+                    int clientSocket = 0;
+                    int serverSocket = serverMap.find(curr_event->ident)->first;
+                    if ((clientSocket = accept(serverSocket, NULL, NULL)) == -1)
+                    {
+                        printErr("accept err");
+                        usleep(10);
+                    }
+                    fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+                    change_events(change_list, clientSocket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                    clientsServerMap[clientSocket] = serverSocket;
+                    serverMap[serverSocket].addClient(clientSocket);
+                }
+            }
+            else if (curr_event->filter == EVFILT_WRITE)
+            {
+                if (fdManager.find(curr_event->ident) != fdManager.end())
+                {
+                    Client &currClient = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]];
+                    if (currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_CGI )
+                    {
+                        std::string &currStr = currClient.getRequestClass().getBody();
+                        int n;
+                        int size =  currStr.size() >= 1023 ? 1023 : currStr.size();
+                        if (( n = write(curr_event->ident ,currStr.c_str(), size)) > 0)
+                        {
+                            currClient.addChunkedWriteSize(n);
+                            if (currClient.getCgiPid() < 0)
+                                currClient.forkCgiPid();
+                            if (currClient.getCgiPid() == 0)
+                            {
+                                int tmpWriteFd = currClient.getWriteFd()[1];
+                                int tmpReadFd = currClient.getReadFd()[0];
+                                
+                                dup2(currClient.getReadFd()[1],1);
+                                close(tmpReadFd);
+                                dup2(currClient.getWriteFd()[0],0);
+                                close(tmpWriteFd);
+                                
+                                char *test[2] ;
+                                test[0] = (char *)(currClient.getCurrLocation().getCgiPath().c_str());
+                                test[1] = NULL;
+                                if((execve(currClient.getCurrLocation().getCgiPath().c_str(),test, currClient.makeEnvp(currClient.getRequestClass().getBody().size()))) == -1 )
+                                {
+                                    printErr("execve err");
+                                    exit(1);
+                                }
+                                exit(1);
+                            }
+                            if (currClient.getChunkedWriteSize() >= static_cast<int>(currClient.getRequestClass().getBody().size()) )
+                            {
                                 change_events(change_list, currClient.getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                                 currClient.setChunkedWriteSize(0);
                             }
+                            else
+                                change_events(change_list, currClient.getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
                         }
-                        else if (currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE || currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
-                            currClient.writeFile(curr_event->ident);
+                        else
+                        {
+                            if (n == -1)
+                                printErr("parent to child write err");
+                            change_events(change_list, currClient.getReadFd()[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                            currClient.setChunkedWriteSize(0);
+                        }
                     }
-                    else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() &&serverMap.find(clientsServerMap[curr_event->ident]) != serverMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                    else if (currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE || currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_NORMAL)
+                        currClient.writeFile(curr_event->ident);
+                }
+                else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() &&serverMap.find(clientsServerMap[curr_event->ident]) != serverMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                {
+                    Client &currClient = serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident];
+                    if (currClient.getResponseClass().getStatusCode() != 0 )
                     {
-                        Client &currClient = serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident];
-                        if (currClient.getResponseClass().getStatusCode() != 0 )
+                        int n = 0;
+                        if (currClient.getVecIdx() == -1)
                         {
-                            int n = 0;
-                            if (currClient.getVecIdx() == -1)
-                            {
-                                std::string ResponseMessage = currClient.getResponseClass().writeResponseMessage();
-                                n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size());
-                                if (n == -1)
-                                    printErr("client write err");
-                                else if (n >= 0)
-                                    currClient.getVecIdx()++;
-                            }
-                            else
-                            {
-                                n = write(curr_event->ident, currClient.getResponseClass().getBody().substr(currClient.getWriteCnt()).c_str() , currClient.getResponseClass().getBody().substr(currClient.getWriteCnt()).size()) ;
-                                if ( n == -1)
-                                    printErr("client write err");
-                                else if (n >= 0)
-                                {
-                                    currClient.getWriteCnt()+=n;
-                                }
-                                if (currClient.getWriteCnt() == static_cast<int>(currClient.getResponseClass().getBody().size()))
-                                    currClient.resetServerValues();
-                            }
+                            std::string ResponseMessage = currClient.getResponseClass().writeResponseMessage();
+                            n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size());
+                            if (n == -1)
+                                printErr("client write err");
+                            else if (n >= 0)
+                                currClient.getVecIdx()++;
                         }
-                        else if (currClient.getStatus()== DONE)
+                        else
                         {
-                            std::map <std::string, std::string>::iterator findIter = currClient.getRequestClass().getHeader().getContent().find("Content-Length");
-                            if (findIter != currClient.getRequestClass().getHeader().getContent().end())
-                            {   
-                                if (std::atoi(findIter->second.c_str()) == static_cast<int>(currClient.getRequestClass().getBody().size()))
-                                {
-                                    currClient.preProcess(currClient.getCurrLocation().getLocationType());
-                                    currClient.processMethod(change_list);
-                                    currClient.setStatus(READY);
-                                }
+                            n = write(curr_event->ident, currClient.getResponseClass().getBody().substr(currClient.getWriteCnt()).c_str() , currClient.getResponseClass().getBody().substr(currClient.getWriteCnt()).size()) ;
+                            if ( n == -1)
+                                printErr("client write err");
+                            else if (n >= 0)
+                            {
+                                currClient.getWriteCnt()+=n;
                             }
-                            else
+                            if (currClient.getWriteCnt() == static_cast<int>(currClient.getResponseClass().getBody().size()))
+                                currClient.resetServerValues();
+                        }
+                    }
+                    else if (currClient.getStatus()== DONE)
+                    {
+                        std::map <std::string, std::string>::iterator findIter = currClient.getRequestClass().getHeader().getContent().find("Content-Length");
+                        if (findIter != currClient.getRequestClass().getHeader().getContent().end())
+                        {   
+                            if (std::atoi(findIter->second.c_str()) == static_cast<int>(currClient.getRequestClass().getBody().size()))
                             {
                                 currClient.preProcess(currClient.getCurrLocation().getLocationType());
                                 currClient.processMethod(change_list);
                                 currClient.setStatus(READY);
                             }
                         }
-                        else if (currClient.getStatus() == CHUNKED_FIN)
+                        else
                         {
                             currClient.preProcess(currClient.getCurrLocation().getLocationType());
                             currClient.processMethod(change_list);
                             currClient.setStatus(READY);
                         }
                     }
+                    else if (currClient.getStatus() == CHUNKED_FIN)
+                    {
+                        currClient.preProcess(currClient.getCurrLocation().getLocationType());
+                        currClient.processMethod(change_list);
+                        currClient.setStatus(READY);
+                    }
                 }
-            int *j =NULL;
-            std::cout <<*j++<<std::endl;
-            std::cout <<*j++<<std::endl;
-            
-            }
-        }
-        catch(const std::exception& e)
-        {
-            std::cout << "catch" << std::endl;
-            // for (std::map<int, int>::iterator iter = clientsServerMap.begin(); iter != clientsServerMap.end() ;)
-            // {
-            //     int clientFd = iter->first;
-            //     close(clientFd);
-            //     serverMap[clientsServerMap[clientFd]].getClientMap().erase(clientFd);
-            //     clientsServerMap.erase(iter++->first);
-            // }
+            }            
         }
     }
     return ;
