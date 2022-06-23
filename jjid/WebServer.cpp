@@ -92,18 +92,18 @@ void WebServer::listenServers()
 	}
 }
 
-void WebServer::disconnect_client(int client_fd, Server &currServer, std::map<int, int> &clientsServerMap)
-{
-    std::cout << "client disconnected: " << client_fd << std::endl;
+// void WebServer::disconnect_client(int client_fd, Server &currServer, std::map<int, int> &clientsServerMap)
+// {
+//     std::cout << "client disconnected: " << client_fd << std::endl;
     
-    close(client_fd);
-    // clients.erase(client_fd);
-    // currServer.getClientMap().erase(currServer.getClientMap().find(client_fd));//이거 잘지워짐?
-    clientsServerMap.erase(client_fd);
-    currServer.getClientMap().erase(client_fd);
-    // clients.erase(client_fd);
-    // clientsServerMap.erase(client_fd);
-}
+//     close(client_fd);
+//     // clients.erase(client_fd);
+//     // currServer.getClientMap().erase(currServer.getClientMap().find(client_fd));//이거 잘지워짐?
+//     clientsServerMap.erase(client_fd);
+//     currServer.getClientMap().erase(client_fd);
+//     // clients.erase(client_fd);
+//     // clientsServerMap.erase(client_fd);
+// }
 
 bool WebServer::checkLastChunked(std::string const &str)
 {
@@ -251,8 +251,15 @@ void WebServer::monitorKqueue()
                         if (n < 0)
                             printErr("client read error!");
                         // std::cout << "read:diconnect call" <<std::endl;
-                        disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);// 0612역시 여기서 냅다 초기화날려야할지두
-                        usleep(300);
+                        else if (n == 0)
+                        {
+                        // std::cout << "read:diconnect call" <<std::endl;
+                            close(curr_event->ident);
+                            usleep(2500); // <- 2000 // 2250
+                            clientsServerMap.erase(curr_event->ident);
+                            serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
+                        // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap);// 0612역시 여기서 냅다 초기화날려야할지두
+                        }
                     }
                     else
                     {
@@ -427,8 +434,8 @@ void WebServer::monitorKqueue()
                             {
                                 currClient.resetServerValues();
                                 // close(curr_event->ident);
-                                disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap); // lsof -p pid 찍어보면 server에는 문제가 없음.
-                                usleep(1500);
+                                // disconnect_client(curr_event->ident, serverMap[clientsServerMap[curr_event->ident]], clientsServerMap); // lsof -p pid 찍어보면 server에는 문제가 없음.
+                                // usleep(1500);
                             }
                         }
                     }

@@ -131,7 +131,7 @@ class Client
 		Location whereIsLocation(std::string const & path);
 		Location getDefaultLocation();
 		
-		int serchIndex(std::string &path, Location currLocation);
+		int serchIndex(std::string &path, Location currLocation, int flag);
 		void openFile(std::string path, int isHead);
 		
 		

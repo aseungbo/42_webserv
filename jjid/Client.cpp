@@ -23,6 +23,7 @@ Client::Client(int _clientSocket)
 	currRequest.clearRequest();
 	envp = NULL;
 	getResponseClass().setStatusCode(0);
+	getResponseClass().setErrStatusCode(0);
 	getResponseClass().CgiHeader = "";
 	readBuf.clear();
 	FDreadBuf.clear();
@@ -169,6 +170,7 @@ void Client::setErrorResponse(int _statusCode)
 		// currResponse.setBody(currLocation.getErrPage()[_statusCode]);
 	// path = "./defaultErrPage/404.html";
 	int	fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+	fcntl(fd, F_SETFL, O_NONBLOCK);
 	if (fd != -1)
 	{
 		setFdManager(fd, getClientSocket());
@@ -611,7 +613,7 @@ Location Client::whereIsLocation(std::string const & path)
 // 	return (getDefaultLocation());
 // }
 
-int Client::serchIndex(std::string &path, Location _currLocation)
+int Client::serchIndex(std::string &path, Location _currLocation, int flag)
 {
 	struct stat buf;
 	
@@ -620,7 +622,8 @@ int Client::serchIndex(std::string &path, Location _currLocation)
 	if (path[path.size() - 1] != '/')
 	{
 		// std::cout << "400000000000003"<<std::endl;
-		setErrorResponse(403);
+		if (flag != POST)
+			setErrorResponse(403);
 		return (ADD_INDEX_FAIL);
 	}
 	if (_currLocation.getIndex().size() == 0)
@@ -642,7 +645,8 @@ int Client::serchIndex(std::string &path, Location _currLocation)
 			return ADDED_INDEX;
 		}
 	}
-	setErrorResponse(404);//??
+	if (flag != POST)
+		setErrorResponse(404);//??
 	return (ADD_INDEX_FAIL);
 }
 
@@ -706,11 +710,19 @@ void Client::readFile(int fd)
         content += buf;
         memset(buf, 0, 1024);
     }
+		std::cout<<"errstat" << this->currResponse.getErrStatusCode()<<std::endl;
     if (this->currResponse.getErrStatusCode() == 0)//이미설정된경우는 에러페이지 리드용일때만하자-> no ! erroSatus 를 담아놓고 여기서 확인후에 배정, 없으면 200
+	{
+			std::cout<<"2000"<<std::endl;
         this->currResponse.setStatusCode(200);
+	}
     else
+	{
+			std::cout<<"2001"<<std::endl;
         this->currResponse.setStatusCode(this->currResponse.getErrStatusCode());
+	}
     this->currResponse.setBody(content);
+	std::cout << "content suize" << content.size( )<< std::endl;
     (*fdManager).erase(fd);
     // std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;
     close(fd);
@@ -817,7 +829,7 @@ void Client::getMethod(int isHead)
 	switch (pathType)
 	{
 		case _DIR ://디렉토리 안에 설정된 인덱스 파일들 탐색 해볼것임 ,  인덱스 파일 없다면(권한없어도) 403 // 만약 설정된 인덱스가 두개 이상이라면 첫번째꺼 // 만약 설정이 없다면 기본적으로 index.html 을 탐색함
-			if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
+			if (serchIndex(path, currLocation, GET) == ADD_INDEX_FAIL)
 			{
 				// std::cout << "auto : " << currLocation.getAutoIndex() << std::endl;
 				if (currLocation.getAutoIndex() == true)
@@ -870,8 +882,11 @@ void Client::postMethod()
 	std::string path = this->currRequest.getStartLine().path;
 	int pathType = checkPath(path);
 	//TODO serchIndex 인자값으로 해당 메소드 넘겨줘서 겟이면 바꾸고 포스트면 안바꾸고로 수정필요
-	if (serchIndex(path, currLocation) == ADD_INDEX_FAIL)
+	if (serchIndex(path, currLocation, POST) == ADD_INDEX_FAIL)//403 404
+	{
 		currResponse.setStatusCode(0);
+		currResponse.setErrStatusCode(0);
+	}
 
 	int fd = 0;
 	// std::cout << "post result:" << path << std::endl;
@@ -947,6 +962,7 @@ void Client::resetServerValues()
 	getRequestClass().setPath("");
 	getResponseClass().CgiHeader = "";
 	currRequest.clearRequest();
+	getResponseClass().setErrStatusCode(0);
 	
 	if (getCurrLocation().getLocationType() == LOCATIONTYPE_CGI_DONE)
 		getCurrLocation().setLocationType(LOCATIONTYPE_CGI);
