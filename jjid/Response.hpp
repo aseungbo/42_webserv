@@ -10,8 +10,11 @@ class Response
 			int statusCode;
 			Header header;
 			std::string body;
+			int errStatusCode;
+
 	
 		public:
+			Response();
 			std::string CgiHeader;
 			std::vector <std::string> chunkedVec;
 			
@@ -22,7 +25,9 @@ class Response
 			void setStatusCode(int statusCode);
 			void setHeader(Header header);
 			void setBody(std::string body);
+			void setErrStatusCode(int errStatuscode);
 			
+			int getErrStatusCode();
 			int getStatusCode();
 			Header getHeader();
 			std::string &getBody();

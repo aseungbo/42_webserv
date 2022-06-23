@@ -24,7 +24,7 @@ std::vector<std::string> Location::getIndex()
  return (index);
 }
 
-std::map<int, std::string> Location::getErrPage()
+std::map<int, std::string> &Location::getErrPage()
 {
  return (errPage);
 }

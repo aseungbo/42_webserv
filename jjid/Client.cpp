@@ -149,10 +149,40 @@ void Client::setServerStatus(int serverStatus)
 
 
 
-void Client::setErrorResponse(int statusCode)
+void Client::setErrorResponse(int _statusCode)
 {
-	this->currResponse.setStatusCode(statusCode);
+	std::string path;
+	if (currLocation.getErrPage().find(_statusCode) != currLocation.getErrPage().end())
+	{
+		std::cout << currLocation.getPath()<<std::endl;
+		std::cout << currLocation.getRoot()<<std::endl;
+		std::cout << currLocation.getErrPage().size()<<std::endl;
+		
+		std::cout <<"여"<< _statusCode << currLocation.getErrPage()[_statusCode]<<std::endl;
+		path = currLocation.getErrPage()[_statusCode];
+		std::cout <<"기" << currLocation.getErrPage()[_statusCode]<<std::endl;
+		// currResponse.setBody(currLocation.getErrPage()[_statusCode]);
+	}
+	else
+		path = "./defaultErrPage/" + std::to_string(_statusCode) +".html";
+	std::cout << "path " << path <<std::endl;
+		// currResponse.setBody(currLocation.getErrPage()[_statusCode]);
+	// path = "./defaultErrPage/404.html";
+	int	fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+	if (fd != -1)
+	{
+		setFdManager(fd, getClientSocket());
+		change_events(*changeList, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0,0,NULL);
+	}
+	else
+	{
+		//TODO  그냥 코드로 페이지 내용 주고 스테이터스 코드 바꾸고 리턴
+		close(fd);
+		return (printErr("errPageOpenFail"));
+	}
+	this->currResponse.setErrStatusCode(_statusCode);
 }
+
 void Client::linkFdManager(std::map<int, int> &fdManager)
 {
 	this->fdManager = &fdManager;
@@ -676,7 +706,10 @@ void Client::readFile(int fd)
         content += buf;
         memset(buf, 0, 1024);
     }
-    this->currResponse.setStatusCode(200);
+    if (this->currResponse.getErrStatusCode() == 0)//이미설정된경우는 에러페이지 리드용일때만하자-> no ! erroSatus 를 담아놓고 여기서 확인후에 배정, 없으면 200
+        this->currResponse.setStatusCode(200);
+    else
+        this->currResponse.setStatusCode(this->currResponse.getErrStatusCode());
     this->currResponse.setBody(content);
     (*fdManager).erase(fd);
     // std::cout << "erase 결과" << (int)((*fdManager).find(fd) != (*fdManager).end())<<std::endl;

@@ -1,9 +1,15 @@
 #include "Response.hpp"
 	
-
+Response::Response()
+{
+	statusCode = 0;
+	errStatusCode = 0;
+}
+	
 std::string	Response::statusMessage(size_t statusCode)
 {
 	static std::map<size_t, std::string>	status;
+
 
 	if (status.size() == 0)
 	{
@@ -133,6 +139,11 @@ void Response::setBody(std::string body)
 	this->body = body;
 }
 
+void Response::setErrStatusCode(int errStatuscode)
+{
+	this->errStatusCode = errStatuscode;
+}
+
 int Response::getStatusCode()
 {
 	return (statusCode);
@@ -148,3 +159,7 @@ std::string &Response::getBody()
 	return (body);
 }
 
+int Response::getErrStatusCode()
+{
+	return (errStatusCode);
+}

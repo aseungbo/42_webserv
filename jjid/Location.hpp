@@ -31,7 +31,7 @@ class Location
 			std::string getRoot();
 			std::string getPath();
 			std::vector<std::string> getIndex();
-			std::map<int, std::string> getErrPage();
+			std::map<int, std::string> &getErrPage();
 			std::vector<std::string> getAllowMethod();
 			int getLocationType();
 			std::string getExtension();
