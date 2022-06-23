@@ -8,25 +8,23 @@
 #define DEFAULT_PATH "./default.conf"
 
 class WebServer
-	{
-		private :
-			WebServer();//hyopark : 안쓸 기본생성자
-			std::vector<Server> servers;
-			std::string confPath;
-			
-			std::vector < int > serverFd; //자료형 고려
-			std::map < int, Server > serverMap; // 서버에서 뭘 받아온다면 다시 고려 
-			// EventHandler // 언젠가 꼭 고려해보쟈 ><
-			
-		public : 
-			WebServer(std::string confPath); // ConfigParser 불러옴
-			int parseConfig(); // this->servers.push_back()
-			void makeKqueue(); // kqueue 생성 
-			void listenServers();//서버들 리슨 바인드 까지
-			void mapFd(); // servers 시작 -> serverFd; -> serverMap
-			void monitorKqueue(); //->안의 기능은 따로 뺄예정
-			bool checkLastChunked(std::string const &str);
-			void disconnect_client(int client_fd, Server &currServer, std::map<int, int> &clientsServerMap);
-	};
+{
+	private :
+		WebServer();
+		std::vector<Server> servers;
+		std::string confPath;
+		std::vector < int > serverFd;
+		std::map < int, Server > serverMap;
+		
+	public : 
+		WebServer(std::string confPath);
+		int parseConfig();
+		void makeKqueue();
+		void listenServers();
+		void mapFd();
+		void monitorKqueue();
+		bool checkLastChunked(std::string const &str);
+		void disconnect_client(int client_fd, Server &currServer, std::map<int, int> &clientsServerMap);
+};
 
 #endif

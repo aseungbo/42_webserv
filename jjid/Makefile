@@ -1,4 +1,3 @@
-
 NAME := jjid
 
 CC := c++
@@ -13,7 +12,6 @@ SRCS := Location.cpp \
 		uniHeader.cpp \
 		WebServer.cpp \
 		Client.cpp
-
 
 OBJ_DIR := ./objs/
 OBJ_NAME := $(SRCS:.cpp=.o)

@@ -2,8 +2,8 @@
 # define REQUEST_HPP
 
 # include "uniHeader.hpp"
-# include "RequestHeader.hpp"
-# include <sstream> // istringstream
+# include "Header.hpp"
+# include <sstream>
 	
 typedef struct s_StartLine
 {
@@ -19,7 +19,7 @@ class Request
 		t_StartLine startline;
 		Header header;                                
 		std::string body;
-		bool cgi;//해당 요청(확장자 보고 판단 )이 cgi인지
+		bool cgi;
 		
 	public:
 		void clearRequest();
@@ -36,10 +36,7 @@ class Request
 
 		void addBody(std::string& str);
 		void setBody(std::string str);
-		void setPath(std::string str)
-		{
-			startline.path = str;
-		}
+		void setPath(std::string str);
 		class StartLineErr : public std::exception
 		{
 			const char *what() const throw ()

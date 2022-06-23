@@ -2,7 +2,6 @@
 # define LOCATION_HPP
 
 # include "uniHeader.hpp"
-// # include "Server.hpp"
 
 #define LOCATIONTYPE_NORMAL 0
 #define LOCATIONTYPE_REDIR 1

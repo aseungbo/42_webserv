@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//socket
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
