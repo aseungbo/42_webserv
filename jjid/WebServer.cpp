@@ -40,16 +40,23 @@ WebServer::WebServer(std::string confPath) : confPath(confPath)
 }
 // ConfigParser 불러옴
 
-void WebServer::parseConfig()
+int WebServer::parseConfig()
 {
     Parser parser = Parser();
     
     parser.openConfigfile(this->confPath);
     if (parser.getConfig().empty() == 1)
-		printErr("Can not open file.");
+    {
+		printErr("Can not open config file.");
+		return 1;
+    }
     this->servers = parser.makeServers();
-    if (this->servers.size() == 0)
-        printErr("Can not make servers.");
+    return 0;
+    // if (this->servers.size() == 0)
+    // {
+    //     printErr("Can not make servers.");
+    //     return ;
+    // }
 }
 
 // kqueue 생성 
@@ -465,9 +472,13 @@ int main (int ac, char **av)
 	std::string confPath;
 
     if ((checkArg(ac, av, confPath) == -1))
+    {
 		printErr("Too many argu");
+        return 0;
+    }
 	WebServer myFirstWebServer(confPath);
-	myFirstWebServer.parseConfig();
+	if (myFirstWebServer.parseConfig())
+	    return 0;
 	myFirstWebServer.listenServers();
 	myFirstWebServer.monitorKqueue();
 	// string confPath = string checkArgu(ac, av);// -> 1 : conf파일 제대로 들어온경우 2 : default로 가야하는경우 0 : 종료해야할 경우(잘못된 파일,)

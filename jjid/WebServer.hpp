@@ -20,7 +20,7 @@ class WebServer
 			
 		public : 
 			WebServer(std::string confPath); // ConfigParser 불러옴
-			void parseConfig(); // this->servers.push_back()
+			int parseConfig(); // this->servers.push_back()
 			void makeKqueue(); // kqueue 생성 
 			void listenServers();//서버들 리슨 바인드 까지
 			void mapFd(); // servers 시작 -> serverFd; -> serverMap

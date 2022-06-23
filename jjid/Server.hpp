@@ -33,7 +33,7 @@ class Server
 			std::string root;
 			std::vector<std::string> index;
 			std::vector<Location> locations;
-			std::map<std::vector<int>, std::string> errPage;
+			std::map<int, std::string> errPage;
 			std::vector<std::string> allowMethod;
 
 			int serverFd;
@@ -48,7 +48,7 @@ class Server
 			void setPort(int port);
 			void setClientBodySize(int clientBodySize);
 			void setIndex(std::vector<std::string> index);
-			void setErrPage(std::map<std::vector<int>, std::string> errPage);
+			void setErrPage(std::map<int, std::string> errPage);
 			void setLocation(std::vector<Location> locations);
 			void setAllowMethod(std::vector<std::string> allowMethod);
 			void setCgiPid(int pid);
@@ -63,7 +63,7 @@ class Server
 			int getPort();
 			int getClientBodySize();
 			std::vector<std::string> getIndex();
-			std::map<std::vector<int>, std::string> getErrPage();
+			std::map<int, std::string> getErrPage();
 			std::vector<Location> getLocations();
 			std::vector<std::string> getAllowMethod();
 			// Request& getRequestClass();

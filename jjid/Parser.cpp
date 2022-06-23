@@ -211,10 +211,9 @@ Location Parser::initLocation()
     return (loc);
 }
 
-std::map<std::vector<int>, std::string> Parser::initErrPage()
+std::map<int, std::string> Parser::initErrPage()
 {
-    std::map<std::vector<int>, std::string> temp;
-    std::vector<int> statusCodes;
+    std::map<int, std::string> temp;
     int size;
 
     if (locFlag == 0)
@@ -224,8 +223,10 @@ std::map<std::vector<int>, std::string> Parser::initErrPage()
             size = keyValueMap.find("error_page")->second.size();
             std::string path = keyValueMap.find("error_page")->second[size - 1];
             for (int i = 0; i < size - 1; i++)
-                statusCodes.push_back(atoi((keyValueMap.find("error_page")->second[i].c_str())));
-            temp.insert(std::pair<std::vector<int>, std::string>(statusCodes, path));
+            {
+                int statusCode = atoi((keyValueMap.find("error_page")->second[i].c_str()));
+                temp[statusCode] = path;
+            }
         }
     }
     else if (locFlag == 1)
@@ -235,8 +236,10 @@ std::map<std::vector<int>, std::string> Parser::initErrPage()
             size = locMap.find("error_page")->second.size();
             std::string path = locMap.find("error_page")->second[size - 1];
             for (int i = 0; i < size - 1; i++)
-                statusCodes.push_back(atoi((locMap.find("error_page")->second[i].c_str())));
-            temp.insert(std::pair<std::vector<int>, std::string>(statusCodes, path));
+            {
+                int statusCode = atoi((locMap.find("error_page")->second[i].c_str()));
+                temp[statusCode] = path;
+            }
         }
     }
     return (temp);
@@ -264,7 +267,11 @@ void    Parser::parseKeyValue(std::string content)
                 setLocFlag(0);
             }
             else if (contSplit[i].find("limit_except") != std::string::npos)
+            {
                 parseAllowMethod(contSplit[i]);
+                if (locFlag == 1)
+                    i += 2;
+            }
             else if (contSplit[i].find(";") != std::string::npos)
                 parseCurrLine(contSplit[i]);
         }
@@ -299,6 +306,7 @@ void    Parser::initServer(std::vector<Server>& servers, std::string content)
         if (locations.size() != 0)
             serv.setLocation(locations);
         servers.push_back(serv);
+        
     }
     locations.clear();
     keyValueMap.clear();

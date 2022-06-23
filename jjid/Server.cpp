@@ -95,7 +95,7 @@ void Server::setIndex(std::vector<std::string> index)
 	this->index = index;
 }
 
-void Server::setErrPage(std::map<std::vector<int>, std::string> errPage)
+void Server::setErrPage(std::map<int, std::string> errPage)
 {
 	this->errPage = errPage;
 }
@@ -135,7 +135,7 @@ std::vector<std::string> Server::getIndex()
 	return (index);
 }
 
-std::map<std::vector<int>, std::string> Server::getErrPage()
+std::map<int, std::string> Server::getErrPage()
 {
 	return (errPage);
 }

@@ -24,7 +24,7 @@ std::vector<std::string> Location::getIndex()
  return (index);
 }
 
-std::map<std::vector<int>, std::string> Location::getErrPage()
+std::map<int, std::string> Location::getErrPage()
 {
  return (errPage);
 }
@@ -89,7 +89,7 @@ void Location::setIndex(std::vector<std::string> index)
 	this->index = index;
 }
 
-void Location::setErrPage(std::map<std::vector<int>, std::string> errPage)
+void Location::setErrPage(std::map<int, std::string> errPage)
 {
 	this->errPage = errPage;
 }
