@@ -63,6 +63,11 @@ void Server::setAllowMethod(std::vector<std::string> allowMethod)
 	this->allowMethod = allowMethod;
 }
 
+int Server::getServerFd()
+{
+	return (serverFd);
+}
+
 std::string Server::getRoot()
 {
 	return (root);
@@ -116,6 +121,7 @@ void Server::addClient(int clientSocket)
 	cli.linkFdManager(*fdManager);
 	cli.setClientBodySize(clientBodySize);
 	cli.setLocations(locations);
+	cli.setServerFd(serverFd);
 	clientMap.insert(std::pair< int, Client>(clientSocket, cli));
 }
 

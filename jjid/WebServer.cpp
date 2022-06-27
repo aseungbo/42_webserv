@@ -64,6 +64,7 @@ void WebServer::listenServers()
 		if (listen(serverSocketFD, 1000) == -1)
 			printErr("listen error");
 		fcntl(serverSocketFD, F_SETFL, O_NONBLOCK);
+		servers[idx].setServerFd(serverSocketFD);
 		this->serverMap.insert(std::pair<int, Server>(serverSocketFD, servers[idx]));
 	}
 }
@@ -115,8 +116,6 @@ void WebServer::monitorKqueue()
         change_list.clear();
         for (int i = 0; i < new_events; ++i)
         {
-                
-            
             curr_event = &event_list[i];
             if (curr_event->flags & EV_ERROR)
             {
@@ -175,7 +174,6 @@ void WebServer::monitorKqueue()
                                 close(tmpReadFd);
                                 tmpWriteFd = currClient.getWriteFd()[1];
                                 tmpReadFd = currClient.getReadFd()[0];
-
                                 
                                 int tmpPid = currClient.getCgiPid();
                                 if (fdManager.find(tmpWriteFd) != fdManager.end())
@@ -191,7 +189,7 @@ void WebServer::monitorKqueue()
                 }
                 else if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end() && serverMap.find(clientsServerMap[curr_event->ident]) != serverMap.end() && serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end() )
                 {
-                    Client &currClient =  serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident];
+                    Client *currClient = &serverMap[clientsServerMap[curr_event->ident]].getClientMap()[curr_event->ident];
                     
                     char buf[1024];
                     memset(buf,0,1024);
@@ -221,44 +219,66 @@ void WebServer::monitorKqueue()
                     else
                     {
                         buf[n] = '\0';
-                        currClient.getClientBody() += buf;
-                        if (currClient.getStatus() == DONE)
+                        currClient->getClientBody() += buf;
+                        if (currClient->getStatus() == DONE)
                         {
-                            currClient.getRequestClass().addBody(currClient.getClientBody());
-                            currClient.getClientBody().clear();
+                            currClient->getRequestClass().addBody(currClient->getClientBody());
+                            currClient->getClientBody().clear();
                         }
-                        else if (currClient.getStatus() == CHUNKED)
+                        else if (currClient->getStatus() == CHUNKED)
                         {
-                            currClient.getRequestClass().addBody(currClient.getClientBody());
-                            currClient.getClientBody().clear();
-                            if (checkLastChunked(currClient.getRequestClass().getBody()))
+                            currClient->getRequestClass().addBody(currClient->getClientBody());
+                            currClient->getClientBody().clear();
+                            if (checkLastChunked(currClient->getRequestClass().getBody()))
                             {
-                                currClient.parseChunkedBody();
-                                currClient.setStatus(CHUNKED_FIN);
+                                currClient->parseChunkedBody();
+                                currClient->setStatus(CHUNKED_FIN);
                                 change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
                             else
-                                currClient.setStatus(CHUNKED);
+                                currClient->setStatus(CHUNKED);
                         }
-                        else if (currClient.getClientBody().find("\r\n\r\n") != std::string::npos)
+                        else if (currClient->getClientBody().find("\r\n\r\n") != std::string::npos)
                         {
-                            currClient.getRequestClass().parseRequestMessage(currClient.getClientBody());
-                            std::map <std::string, std::string>::iterator chunkedIter = currClient.getRequestClass().getHeader().getContent().find("Transfer-Encoding");
-                            currClient.getClientBody().clear();
-                            if (chunkedIter != currClient.getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
+                            currClient->getRequestClass().parseRequestMessage(currClient->getClientBody());
+                            std::map <std::string, std::string>::iterator hostIter = currClient->getRequestClass().getHeader().getContent().find("Host");
+                            if (hostIter != currClient->getRequestClass().getHeader().getContent().end())
                             {
-                                if(currClient.getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
+                                for (unsigned long idx = 0 ; idx < this->servers.size(); idx++)
                                 {
-                                    currClient.parseChunkedBody();
-                                    currClient.setStatus(CHUNKED_FIN);
+                                    for (unsigned long jdx = 0 ; jdx < servers[idx].getHost().size() ; jdx++)
+                                    {
+										if (servers[idx].getHost()[jdx] + ":" + std::to_string(servers[idx].getPort()) == hostIter->second)
+										{
+											std::string tmp = currClient->getClientBody();
+											
+											clientsServerMap[curr_event->ident] = servers[idx].getServerFd();
+											serverMap[servers[idx].getServerFd()].addClient(curr_event->ident);
+											if (serverMap[currClient->getServerFd()].getClientMap().find(curr_event->ident) != serverMap[currClient->getServerFd()].getClientMap().end())
+												serverMap[currClient->getServerFd()].getClientMap().erase(curr_event->ident);
+											currClient= &(serverMap[servers[idx].getServerFd()].getClientMap()[curr_event->ident]);
+											currClient->getRequestClass().parseRequestMessage(tmp);
+										}
+									}
+                                }
+                            }
+                            
+                            std::map <std::string, std::string>::iterator chunkedIter = currClient->getRequestClass().getHeader().getContent().find("Transfer-Encoding");
+                            currClient->getClientBody().clear();
+                            if (chunkedIter != currClient->getRequestClass().getHeader().getContent().end() && chunkedIter->second == "chunked")
+                            {
+                                if(currClient->getRequestClass().getBody().find("0\r\n\r\n") != std::string::npos)
+                                {
+                                    currClient->parseChunkedBody();
+                                    currClient->setStatus(CHUNKED_FIN);
                                     change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                                 }
                                 else
-                                    currClient.setStatus(CHUNKED);
+                                    currClient->setStatus(CHUNKED);
                             }
                             else
                             {
-                                currClient.setStatus(DONE);
+                                currClient->setStatus(DONE);
                                 change_events(change_list, curr_event->ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                             }
                         }
@@ -283,7 +303,7 @@ void WebServer::monitorKqueue()
             {
                 if (fdManager.find(curr_event->ident) != fdManager.end())
                 {
-                    Client &currClient = serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]];
+                    Client &currClient= serverMap[clientsServerMap[fdManager[curr_event->ident]]].getClientMap()[fdManager[curr_event->ident]];
                     if (currClient.getCurrLocation().getLocationType() == LOCATIONTYPE_CGI )
                     {
                         std::string &currStr = currClient.getRequestClass().getBody();

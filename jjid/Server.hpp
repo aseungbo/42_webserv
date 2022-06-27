@@ -47,6 +47,7 @@ class Server
 		std::map<int, std::string> getErrPage();
 		std::vector<Location> getLocations();
 		std::vector<std::string> getAllowMethod();
+		int getServerFd();
 		void linkFdManager(std::map<int, int> &FdManager);
 		void linkChangeList(std::vector <struct kevent> &changeList);
 		void addClient(int clientSocket);

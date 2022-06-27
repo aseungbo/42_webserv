@@ -329,7 +329,6 @@ void Client::preProcess(int type)
 	if (type != LOCATIONTYPE_CGI_DONE)
 		if (cgiLocation(pathTmp))
 		{
-
 			return;
 		}
 	currLocation = whereIsLocation(pathTmp);
@@ -520,7 +519,9 @@ int Client::serchIndex(std::string &path, Location _currLocation, int flag)
 	{
 
 		if (flag != POST)
+		{
 			setErrorResponse(403);
+		}
 		return (ADD_INDEX_FAIL);
 	}
 	if (_currLocation.getIndex().size() == 0)
@@ -740,7 +741,6 @@ void Client::postMethod()
 	}
 	else if (pathType == _DIR)
 	{
-
 		return (setErrorResponse(403));
 	}
 

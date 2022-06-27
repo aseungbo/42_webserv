@@ -109,7 +109,7 @@ void Request::parseRequestMessage(std::string requestMessage)
 		if (parseRequest.size() > 0)
 			initStartLine(parseRequest[0]);	
 		else
-			return (printErr("no requset"));
+			return (printErr("no request"));
 		std::vector<std::string>::iterator iter = parseRequest.begin() + 1;
 	try
 	{
