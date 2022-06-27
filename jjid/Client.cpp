@@ -451,8 +451,8 @@ void Client::processMethod(std::vector<struct kevent> &change_list)
 	}
 	else if (currLocation.getLocationType() == LOCATIONTYPE_REDIR)
 	{
-
 		currResponse.setStatusCode(currLocation.getReturnCode());
+		currResponse.setBody(currLocation.getReturnUrl());
 	}
 }
 
@@ -542,7 +542,7 @@ int Client::serchIndex(std::string &path, Location _currLocation, int flag)
 			return ADDED_INDEX;
 		}
 	}
-	if (flag != POST)
+	if (flag != POST && _currLocation.getAutoIndex() == false)
 		setErrorResponse(404);
 	return (ADD_INDEX_FAIL);
 }
@@ -601,25 +601,31 @@ void Client::readFile(int fd)
 		content += buf;
 		memset(buf, 0, 1024);
 	}
-	if (this->currResponse.getErrStatusCode() == 0)
-		this->currResponse.setStatusCode(200);
-	else
-		this->currResponse.setStatusCode(this->currResponse.getErrStatusCode());
-	this->currResponse.setBody(content);
-	(*fdManager).erase(fd);
-
-	close(fd);
+	if (n <= 0)
+	{
+		if (n == 0)
+		{
+			if (this->currResponse.getErrStatusCode() == 0)
+				this->currResponse.setStatusCode(200);
+			else
+				this->currResponse.setStatusCode(this->currResponse.getErrStatusCode());
+			this->currResponse.setBody(content);
+		}
+		if ((*fdManager).find(fd) != (*fdManager).end())
+			(*fdManager).erase(fd);
+		close(fd);
+	}
 }
 
 void Client::writeFile(int fd)
 {
-
 	int n = write(fd, currRequest.getBody().c_str(), currRequest.getBody().size());
-	if (n == -1)
+	if (n == -1 || (n == 0 && currRequest.getBody().size() != 0))
 		printErr("write file err");
-	this->currResponse.setStatusCode(201);
-	(*fdManager).erase(fd);
-
+	else 
+		this->currResponse.setStatusCode(201);
+	if ((*fdManager).find(fd) != (*fdManager).end())
+		(*fdManager).erase(fd);
 	close(fd);
 }
 
@@ -679,10 +685,10 @@ void Client::getMethod(int isHead)
 	case _DIR:
 		if (serchIndex(path, currLocation, GET) == ADD_INDEX_FAIL)
 		{
-
 			if (currLocation.getAutoIndex() == true)
 			{
 				currResponse.setBody(autoIndexBody());
+				currResponse.setErrStatusCode(0);
 				currResponse.setStatusCode(200);
 			}
 			return;
@@ -747,11 +753,26 @@ void Client::postMethod()
 void Client::deleteMethod()
 {
 	std::string path = this->currRequest.getStartLine().path;
-	path = "." + path;
-	currResponse.setStatusCode(200);
-	this->currResponse.setBody("complite delete");
+	int pathType = checkPath(path);
 
-	std::remove(path.c_str());
+
+	if (pathType == _FILE )
+	{
+		if (remove(path.c_str()) != 0)
+			return(setErrorResponse(500));
+		currResponse.setStatusCode(200);
+	}
+	else if (pathType == NOT)
+	{
+		return(setErrorResponse(404));
+	}
+	else if (pathType == _DIR)
+	{
+
+		if (rmdir(path.c_str())!= 0)
+			return(setErrorResponse(500));
+		currResponse.setStatusCode(200);
+	}
 }
 
 void Client::resetServerValues()

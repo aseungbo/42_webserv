@@ -45,7 +45,6 @@ int WebServer::parseConfig()
 
 void WebServer::listenServers()
 {
-    std::cout << "\033[47;30m[ Available Port ]\033[0m" << std::endl;;
 	for (unsigned long idx = 0; idx < this->servers.size() ; idx++)
 	{
 		struct sockaddr_in serverAddr;
@@ -59,7 +58,6 @@ void WebServer::listenServers()
 		memset(&serverAddr, 0, sizeof(serverAddr));
 		serverAddr.sin_family = AF_INET;
 		serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        std::cout << "serv port: " << this->servers[idx].getPort() << std::endl;
 		serverAddr.sin_port = htons(this->servers[idx].getPort());
 		if (bind(serverSocketFD, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1)
 			printErr("bind error");
@@ -99,7 +97,6 @@ void WebServer::monitorKqueue()
         iter->second.linkFdManager(fdManager); 
         iter->second.linkChangeList(change_list); 
 	}
-	std::cout << "echo server started" << std::endl;
 	
 	int new_events;
     struct kevent* curr_event;
@@ -107,7 +104,6 @@ void WebServer::monitorKqueue()
     
     while (1)
     { 
-        
         memset(&kTime, 0x00, sizeof(kTime));
         kTime.tv_sec = 5;
 
@@ -151,6 +147,8 @@ void WebServer::monitorKqueue()
                                 body += buf;
                                 memset(buf, 0, 1024);
                             }
+                            else if (n <= 0)
+                                printErr("CGI read error");
                             currClient.addChunkedStr(body);
                         }
                         if (currClient.getRequestClass().getBody().size() <= currClient.getChunkedStr().size())
@@ -180,8 +178,10 @@ void WebServer::monitorKqueue()
 
                                 
                                 int tmpPid = currClient.getCgiPid();
-                                fdManager.erase(tmpWriteFd);
-                                fdManager.erase(tmpReadFd);
+                                if (fdManager.find(tmpWriteFd) != fdManager.end())
+                                    fdManager.erase(tmpWriteFd);
+                                if (fdManager.find(tmpReadFd) != fdManager.end())
+                                    fdManager.erase(tmpReadFd);
                                 close(tmpWriteFd);
                                 close(tmpReadFd);
                                 waitpid(tmpPid, NULL, WNOHANG);
@@ -199,13 +199,23 @@ void WebServer::monitorKqueue()
                     if (n <= 0)
                     {
                         if (n < 0)
+                        {
                             printErr("client read error!");
+                            close(curr_event->ident);
+                            usleep(2500);
+                            if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end())
+                                clientsServerMap.erase(curr_event->ident);
+                            if (serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                                serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
+						}
                         else if (n == 0)
                         {
                             close(curr_event->ident);
                             usleep(2500);
-                            clientsServerMap.erase(curr_event->ident);
-                            serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
+                            if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end())
+                                clientsServerMap.erase(curr_event->ident);
+                            if (serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                                serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
                         }
                     }
                     else
@@ -334,7 +344,15 @@ void WebServer::monitorKqueue()
                             std::string ResponseMessage = currClient.getResponseClass().writeResponseMessage();
                             n = write(curr_event->ident, ResponseMessage.c_str(), ResponseMessage.size());
                             if (n == -1)
+                            {
                                 printErr("client write err");
+                                close(curr_event->ident);
+                                usleep(2500);
+                                if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end())
+                                    clientsServerMap.erase(curr_event->ident);
+                                if (serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+                                    serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
+							}
                             else if (n >= 0)
                                 currClient.getVecIdx()++;
                         }
@@ -342,7 +360,15 @@ void WebServer::monitorKqueue()
                         {
                             n = write(curr_event->ident, currClient.getResponseClass().getBody().substr(currClient.getWriteCnt()).c_str() , currClient.getResponseClass().getBody().substr(currClient.getWriteCnt()).size()) ;
                             if ( n == -1)
+                            {
                                 printErr("client write err");
+                                close(curr_event->ident);
+								usleep(2500);
+								if (clientsServerMap.find(curr_event->ident) != clientsServerMap.end())
+									clientsServerMap.erase(curr_event->ident);
+								if (serverMap[clientsServerMap[curr_event->ident]].getClientMap().find(curr_event->ident) != serverMap[clientsServerMap[curr_event->ident]].getClientMap().end())
+									serverMap[clientsServerMap[curr_event->ident]].getClientMap().erase(curr_event->ident);
+							}
                             else if (n >= 0)
                             {
                                 currClient.getWriteCnt()+=n;

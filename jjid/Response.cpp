@@ -74,12 +74,6 @@ std::string	Response::statusMessage(size_t statusCode)
 		return status[statusCode];
 }
 
-std::string inHeadMethodNameIsHederMapToString(std::map <std::string, std::string > content)
-{
-	(void)content;
-	return ("Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: keep-alive\r\nContent-Type: text/html;charset=UTF-8\r\n");//Location: https://www.naver.com\r\n");
-}
-
 std::string Response::setErrorResponse(int statusCode)
 {
 	return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" );//+ inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\n" + getBody());
@@ -91,9 +85,9 @@ std::string setErrorPage(int statusCode)
 }
 std::string Response::writeResponseMessage()
 {
-	if (statusCode/100 != 2)
-		setErrorPage(statusCode);
-	return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\n" + inHeadMethodNameIsHederMapToString((header.getContent())) + "Content-Length: " + std::to_string(getBody().size()) +  "\r\n\r\n") ;
+	if (statusCode / 100 == 3)
+		return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\nServer: jjid\r\nAccept-Ranges: bytes\r\nConnection: keep-alive\r\nContent-Type: text/html;charset=UTF-8\r\nLocation: "+ getBody() +"\r\n\r\n");
+	return ("HTTP/1.1 " + std::to_string(statusCode) + " " + statusMessage(statusCode) + "\r\nServer: jjid\r\nAccept-Ranges: bytes\r\nConnection: keep-alive\r\nContent-Type: text/html;charset=UTF-8\r\nContent-Length: " + std::to_string(getBody().size()) +  "\r\n\r\n") ;
 }
 
 std::string Response::searchStatusCodeMessage(int statusCode)
