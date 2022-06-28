@@ -1,6 +1,7 @@
 #include "Server.hpp"
 
 void aliasRoot(Location currLocation, std::string &path);
+
 int checkPath(std::string &path);
 
 void Server::setPort(int port)

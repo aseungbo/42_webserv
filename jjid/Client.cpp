@@ -95,7 +95,6 @@ void Client::setFdManager(int fd, int _clientFd)
 
 	if (fdManager->find(fd) != fdManager->end())
 	{
-
 		exit(1);
 	}
 	(*fdManager).insert(std::pair<int, int>(fd, _clientFd));
@@ -180,7 +179,7 @@ void Client::setErrorResponse(int _statusCode)
 		path = currLocation.getErrPage()[_statusCode];
 	}
 	else
-		path = "./defaultErrPage/" + std::to_string(_statusCode) + ".html";
+		path = "./defaultErrPage/" + miniToString(_statusCode) + ".html";
 
 	int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
 	fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -271,7 +270,7 @@ char **Client::makeEnvp(int length)
 
 	currRequest.getHeader().getContent().find("Content-Length");
 
-	temp = "CONTENT_LENGTH=" + std::to_string(length);
+	temp = "CONTENT_LENGTH=" + miniToString(length);
 
 	result[3] = new char[temp.size() + 1];
 	result[3] = strcpy(result[3], temp.c_str());

@@ -2,6 +2,7 @@
 #include <time.h>
 
 std::vector<std::string > makeChunkedVec(std::string originStr);
+
 std::string makeCgiHeader(std::string str)
 {
     std::string tmpHeader;
@@ -12,6 +13,7 @@ std::string makeCgiHeader(std::string str)
     tmpHeader += "Server: a\r\nLast-Modified: a\r\nETag: 'A'\r\nAccept-Ranges: bytes\r\nConnection: keep-alive\r\n"+tmpStr+"\r\nTransfer-Encoding: chunked\r\n\r\n";
     return tmpHeader;
 }
+
 int checkArg(int ac, char **av, std::string& confPath)
 {
     if (ac == 2)
@@ -165,7 +167,7 @@ void WebServer::monitorKqueue()
                                 currClient.setStatus(DONE);
                                 
                                 if (findIter != currClient.getRequestClass().getHeader().getContent().end())
-                                    findIter->second = std::to_string(currClient.getRequestClass().getBody().size());
+                                    findIter->second = miniToString(currClient.getRequestClass().getBody().size());
                                 currClient.setChunkedStr("");
                                 
                                 int tmpWriteFd = currClient.getWriteFd()[0];
@@ -248,7 +250,7 @@ void WebServer::monitorKqueue()
                                 {
                                     for (unsigned long jdx = 0 ; jdx < servers[idx].getHost().size() ; jdx++)
                                     {
-										if (servers[idx].getHost()[jdx] + ":" + std::to_string(servers[idx].getPort()) == hostIter->second)
+										if (servers[idx].getHost()[jdx] + ":" + miniToString(servers[idx].getPort()) == hostIter->second)
 										{
 											std::string tmp = currClient->getClientBody();
 											
@@ -318,16 +320,17 @@ void WebServer::monitorKqueue()
                             {
                                 int tmpWriteFd = currClient.getWriteFd()[1];
                                 int tmpReadFd = currClient.getReadFd()[0];
+                                char *exePath[2];
+                                exePath[0] = (char *)(currClient.getCurrLocation().getCgiPath().c_str());
+                                exePath[1] = NULL;
                                 
                                 dup2(currClient.getReadFd()[1],1);
                                 close(tmpReadFd);
                                 dup2(currClient.getWriteFd()[0],0);
                                 close(tmpWriteFd);
                                 
-                                char *test[2] ;
-                                test[0] = (char *)(currClient.getCurrLocation().getCgiPath().c_str());
-                                test[1] = NULL;
-                                if((execve(currClient.getCurrLocation().getCgiPath().c_str(),test, currClient.makeEnvp(currClient.getRequestClass().getBody().size()))) == -1 )
+
+                                if((execve(currClient.getCurrLocation().getCgiPath().c_str(), exePath, currClient.makeEnvp(currClient.getRequestClass().getBody().size()))) == -1 )
                                 {
                                     printErr("execve err");
                                     exit(1);

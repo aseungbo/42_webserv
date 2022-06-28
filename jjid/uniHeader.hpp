@@ -26,5 +26,6 @@
 #include <cstdio>
 
 void printErr(std::string str);
+std::string miniToString(int val);
 
 #endif
